@@ -1,0 +1,14 @@
+{
+  "name": "waterChallenge",
+  "version": "1.0.0",
+  "description": "water availability analysis web app for the 2016 CA water data challenge",
+  "main": "index.html",
+  "scripts": {
+    "less": "lessc ./css/theme.less ./css/theme.css"
+  },
+  "author": "Kylie",
+  "license": "ISC",
+  "devDependencies": {
+    "less": "^2.7.1"
+  }
+}
