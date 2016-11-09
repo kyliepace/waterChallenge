@@ -1,57 +1,36 @@
+require([
+    "dojo/ready",
+    "dojo/parser",
+    "esri/map",
+   	"esri/geometry/webMercatorUtils", 
+   	"dojo/dom"
+], function (
+    ready,
+    parser,
+    Map,
+   	webMercatorUtils, 
+   	dom
+) {
+    ready(function () {
+        parser.parse();
 
-var makeMap = function(){require([
-	"esri/layers/FeatureLayer",
-	
-	], function(FeatureLayer) {
-		
-		});
-		
-		
-	  	var featureLayer = new FeatureLayer({
-	  		fields:[
-	  		{
-	  			name: 'city',
-	  			alias: 'unique city',
-	  			type: 'string'
-	  		},
-	  		{
-	  			name: 'freq',
-	  			nullable: true,
-	  			alias: 'number of people',
-	  			type: 'integer'
-	  		}],
-	  		objectIdField: 'objectID',
-	  		geometryType: 'point',
-	  		spatialReference: { wkid: 4326 },
-	   		source: cities,  //  an array of graphics with geometry and attributes
-	                     // popupTemplate and symbol are not required in each graphic
-	                     // since those are handled with the popupTemplate and
-	                     // renderer properties of the layer
-	   		popupTemplate: pTemplate,
-	   		renderer: renderer 
-	  	});
+        var map = new Map("map", {
+            basemap: "topo",
+            center: [-119.4179,36.7783],
+            zoom: 6
+        });
 
-	  	var map = new Map({
-	  		basemap: "gray-vector", 
-	  		layers: [featureLayer]
-	  	});
-	  
-	  	var view = new MapView({
-	  		container: "viewDiv",
-	  		center: [-97.5, 40],
-	  		zoom: 4,
-	  		map: map
-	  		// extent: { // autocasts as new Extent()
-	    //         xmin: -7707811,
-	    //         ymin: 3547000,
-	    //         xmax: -13376791,
-	    //         ymax: 5247784,
-	    //         spatialReference: 102100
-	    //       }
-	  	});
-	});
-};
+        map.on("load", function() {
+          //after map loads, connect to listen to mouse move & drag events
+          map.on("click", showCoordinates);
+        });
 
-document.addEventListener("DOMContentLoaded", function(e){
-	makeMap();
+        function showCoordinates(evt) {
+          //the map is in web mercator but display coordinates in geographic (lat, long)
+          var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+          //display mouse coordinates
+          dom.byId("info").innerHTML = mp.x.toFixed(3) + ", " + mp.y.toFixed(3);
+        };
+    });
 });
+
