@@ -1,0 +1,19 @@
+#viewDiv {
+  width: 800px;
+  height: 600px;
+}
+/*footer*/
+footer {
+  background: #D7D7D7;
+  color: #0D2A40;
+  text-align: center;
+  margin: 0;
+  overflow: auto;
+}
+footer a {
+  text-decoration: none;
+  font-size: 2em;
+  color: #0D2A40;
+  text-align: center;
+  padding: 0.5em;
+}

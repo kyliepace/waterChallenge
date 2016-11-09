@@ -4,7 +4,7 @@
   "description": "water availability analysis web app for the 2016 CA water data challenge",
   "main": "index.html",
   "scripts": {
-    "less": "lessc ./css/theme.less ./css/theme.css"
+    "less": "lessc ./css/style.less ./css/style.css"
   },
   "author": "Kylie",
   "license": "ISC",
