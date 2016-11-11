@@ -17,10 +17,13 @@ require([
         var map = new Map("map", {
             basemap: "topo",
             center: [-119.4179,36.7783],
-            zoom: 7
+            zoom: 7,
+            smartNavigation: false
         });
 
         map.on("load", function() {
+        	map.hidePanArrows();
+        	map.showZoomSlider();
           //after map loads, connect to listen to mouse move & drag events
           map.on("click", showCoordinates);
         });
@@ -44,6 +47,7 @@ document.getElementById("container1").addEventListener("click", function(){
 	request.send(); //send request to usgs to return water basin characteristics
 	//make page show that it's loading data 
 	this.disabled = "disabled"; //disable button
+	this.style.cursor = "auto";
 });
  
 request.onreadystatechange = function() {
@@ -62,5 +66,6 @@ request.onreadystatechange = function() {
   else{
   	update.style.display = "block";
   	update.innerHTML = "Retrieving watershed data from USGS";
+  	document.body.style.cursor = "wait";
   }
 };
