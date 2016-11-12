@@ -5,7 +5,9 @@ require([
    	"esri/geometry/webMercatorUtils", 
    	"esri/geometry/Polygon",
    	"esri/symbols/SimpleFillSymbol",
+   	"esri/symbols/SimpleLineSymbol", "esri/Color",
    	"esri/graphic",
+   	"esri/layers/GraphicsLayer",
    	"dojo/dom"
 ], function (
     ready,
@@ -14,7 +16,9 @@ require([
    	webMercatorUtils, 
    	Polygon,
    	SimpleFillSymbol,
+   	SimpleLineSymbol, Color,
    	Graphic,
+   	GraphicsLayer,
    	dom
 ) {
     ready(function () {
@@ -30,19 +34,19 @@ require([
         map.on("load", function() {
         	map.hidePanArrows();
         	map.showZoomSlider();
-          //after map loads, connect to listen to mouse move & drag events
-          map.on("click", showCoordinates);
+            //after map loads, connect to listen to mouse move & drag events
+            map.on("click", showCoordinates);
         });
         
         function showCoordinates(evt) {
-          //the map is in web mercator but display coordinates in geographic (lat, long)
-          var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
-          //display mouse coordinates
-          dom.byId("container1").innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
-          dom.byId("container1").style.display = "block";
-          //update url with coordinates
-          usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.json?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=3310&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
-        
+            //the map is in web mercator but display coordinates in geographic (lat, long)
+            var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+            //display mouse coordinates
+            dom.byId("container1").innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
+            dom.byId("container1").style.display = "block";
+            //update url with coordinates
+            usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.json?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=3310&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+        	//listen for when button is clicked to generate watershed details
 	        document.getElementById("container1").addEventListener("click", function(){
 				this.disabled = "disabled"; //disable button
 				request.open("Get", usgsBasinUrl);
@@ -58,7 +62,24 @@ require([
 			      		console.log(response);
 			      		watershedID = response.workspaceID;
 			      		watershed = response.featurecollection[1].feature;
-			      		drawWatershed(watershed);
+			      		console.log(watershed);
+			      		 /********************************************
+				       * Create a polygon graphic of the watershed *
+				       *********************************************/
+			       		var polygonJson  = {"rings":[watershed.features[0].geometry.rings],"spatialReference":{"wkid":3310 }};
+			  			var polygon = new Polygon(polygonJson);
+				      	// Create a symbol for rendering the graphic
+				      	var fillSymbol = new SimpleFillSymbol(
+				      		SimpleFillSymbol.STYLE_SOLID,
+    						new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASHDOT,
+    							new Color([255,0,0]), 2),new Color([255,255,0,0.25])
+				      	);
+				        var watershedGraphic = new Graphic(polygon, fillSymbol) ;
+
+				        //var watershedLayer = new GraphicsLayer();
+				        //watershedLayer.add(watershedGraphic);
+				        //watershedGraphic.draw();
+				        map.graphics.add(watershedGraphic);
 			    	} else {
 			      		document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
 			    	} 
@@ -70,30 +91,6 @@ require([
 			  	}
 			};
         };
-
-        /********************************************
-       * Create a polygon graphic of the watershed *
-       *********************************************/
-       var drawWatershed = function(watershed){
-       		var polygonJson  = {"rings":[watershed.features[0].geometry.rings],"spatialReference":{"wkid":3310 }};
-  			var polygon = new Polygon(polygonJson);
-  			console.log(polygon);
-	      // Create a symbol for rendering the graphic
-	      var fillSymbol = new SimpleFillSymbol({
-	        color: [227, 139, 79, 0.8],
-	        outline: { // autocasts as new SimpleLineSymbol()
-	          color: [255, 255, 255],
-	          width: 1
-	        }
-	      });
-
-	      // Add the geometry and symbol to a new graphic
-	      var watershedGraphic = new Graphic({
-	        geometry: polygon,
-	        symbol: fillSymbol
-	      });
-	      watershedGraphic.draw();
-       };
     });
 });
 
