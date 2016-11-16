@@ -63,6 +63,10 @@ require([
 	    	this.disabled = "disabled";
 	    	usgsRequest(); 
 	    });
+	    //when container3 is clicked, get diverter info from swrcb
+	    document.getElementById("container3").addEventListener("click", function(){
+	    	swrcbRequest();
+	    });
     };
 
     var usgsRequest = function(){
@@ -91,6 +95,10 @@ require([
 			 //  		document.body.style.cursor = "wait";
 			 //  	} 
 			 // }; 
+
+			 /**** for testing purposes have the following two lines here ****/
+			container3.style.display = "block";
+			container3.innerHTML = "Get water rights data"
     };
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
@@ -119,6 +127,11 @@ require([
         watershedLayer.redraw();
     };
 
+    var swrcbRequest = function(){
+    	//send request to swrcb
+    	// http://ciwqs.waterboards.ca.gov/ciwqs/ewrims/EWServlet?Page_From=EWWaterRightPublicSearch.jsp&Redirect_Page=EWWaterRightPublicSearchResults.jsp&Object_Expected=EwrimsSearchResult&Object_Created=EwrimsSearch&Object_Criteria=&Purpose=&subTypeCourtAdjSpec=&subTypeOtherSpec=&appNumber=&permitNumber=&licenseNumber=&waterHolderName=&source=&hucNumber=&watershed=RUSSIAN+RIVER
+    };
+
     ready(initialize); //run function
 });
 
@@ -130,4 +143,5 @@ var fillSymbol;
 var watershedID;
 var watershedGraphic;
 var watershedLayer;
+var container3 = document.getElementById("container3");
 var request = new XMLHttpRequest();
