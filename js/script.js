@@ -71,31 +71,32 @@ require([
 
     function usgsRequest(){
 		request.open("Get", usgsBasinUrl);
-		request.onreadystatechange = function(){
+		
+	    request.send();	
+
+	    request.onreadystatechange = function(){
     		var update = document.getElementById("container2");
     		document.body.style.cursor = "wait";
+    		update.style.display = "block";
+		  	update.innerHTML = "Retrieving watershed data from USGS";
+    		
     		if(request.readyState === 4) { //if response is ready
 	 			update.style.display = "none";
 	 			document.body.style.cursor = "auto";
 	 			container3.style.display = "block";
-	    			if(request.status === 200) { //what to do with successful response
-	      				var response = JSON.parse(request.responseText);
-	      				watershedID = response.workspaceID;
-	      				watershed = response.featurecollection[1];
-	      				console.log(watershed);
-	      				drawWatershed();
-	      				container3.innerHTML = "Get water rights data"
-    				}
-    				else {
-		      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-		    		} 
+    			if(request.status === 200) { //what to do with successful response
+      				var response = JSON.parse(request.responseText);
+      				watershedID = response.workspaceID;
+      				watershed = response.featurecollection[1];
+      				console.log(watershed);
+      				drawWatershed();
+      				container3.innerHTML = "Get water rights data"
+				}
+				else {
+	      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+	    		} 
 		  	}
-		  	else{
-		  		update.style.display = "block";
-		  		update.innerHTML = "Retrieving watershed data from USGS";	
-		  	} 
 		 }; 
-	    request.send();	
     };
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
@@ -108,21 +109,6 @@ require([
     };
 
     var drawWatershed = function(){
-  //   	var rings = watershed.features[0].geometry.coordinates; 
-		// polygon.addRing(rings);
-		// polygon.spatialReference = map.spatialReference;
-  //     	// Create a symbol for rendering the graphic
-  //       watershedGraphic = new Graphic(polygon, fillSymbol, {keeper: true}) ;
-  //	    watershedLayer = new GraphicsLayer({id: "basin"});  
-  //       watershedLayer.setScaleRange(0,0); //make sure it's visible at all scales
-  //       watershedLayer.setVisibility(true);
-  //       map.addLayer(watershedLayer);
-  //       map.reorderLayer(watershedLayer, 1);
-  //       console.log('added layer to map');
-  //       watershedLayer.add(watershedGraphic);
-  //       console.log('added graphic to layer');
-  //       watershedLayer.redraw();
-
   		var geoJsonLayer = new GeoJsonLayer({
     		data: watershed.feature
 		});
