@@ -2,7 +2,7 @@ require([
     "dojo/ready",
     "dojo/parser",
     "esri/map",
-    "./src/geojsonlayer",
+    "./js/src/geojsonlayer.js",
     "esri/layers/ArcGISTiledMapServiceLayer",
    	"esri/geometry/webMercatorUtils", 
    	"esri/SpatialReference",
@@ -69,10 +69,11 @@ require([
 	    });
     };
 
-    var usgsRequest = function(){
+    function usgsRequest(){
 		request.open("Get", usgsBasinUrl);
 		request.onreadystatechange = function(){
     		var update = document.getElementById("container2");
+    		document.body.style.cursor = "wait";
     		if(request.readyState === 4) { //if response is ready
 	 			update.style.display = "none";
 	 			document.body.style.cursor = "auto";
@@ -91,8 +92,7 @@ require([
 		  	}
 		  	else{
 		  		update.style.display = "block";
-		  		update.innerHTML = "Retrieving watershed data from USGS";
-		  		document.body.style.cursor = "wait";
+		  		update.innerHTML = "Retrieving watershed data from USGS";	
 		  	} 
 		 }; 
 	    request.send();	
@@ -124,7 +124,7 @@ require([
   //       watershedLayer.redraw();
 
   		var geoJsonLayer = new GeoJsonLayer({
-    		data: watershed
+    		data: watershed.feature
 		});
 
 		map.addLayer(geoJsonLayer);
