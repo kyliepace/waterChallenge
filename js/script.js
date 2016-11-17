@@ -52,10 +52,23 @@ require([
 	    map.on("load", function() {
 	    	map.hidePanArrows();
 	    	map.showZoomSlider();
+	    	map.setMapCursor("move");
+	    });
+
+	    map.on("zoom-end", function(){
+	    	if(map.getZoom() >= 15){
+	    		map.setMapCursor("crosshair"); //make cursor = crosshair
+	    	}
 	    });
 
 	    map.on("click", function(evt){
-	    	showCoordinates(evt);
+	    	console.log(map.getZoom());
+	    	if(map.getZoom() >= 15){
+	    		showCoordinates(evt);
+	    	}
+	    	else{
+	    		instructions.innerHTML = "Zoom in more to select an outlet";
+	    	}
 	    });
 
 	    //when container1 is clicked, send coordinates to usgs to return watershed info
@@ -75,11 +88,10 @@ require([
 	    request.send();	
 
 	    request.onreadystatechange = function(){
-    		var update = document.getElementById("container2");
-    		document.body.style.cursor = "wait";
-    		update.style.display = "block";
+	    	console.log('request state change');
+    		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+    		update.style.display = "block"; //show the update container
 		  	update.innerHTML = "Retrieving watershed data from USGS";
-    		
     		if(request.readyState === 4) { //if response is ready
 	 			update.style.display = "none";
 	 			document.body.style.cursor = "auto";
@@ -88,12 +100,11 @@ require([
       				var response = JSON.parse(request.responseText);
       				watershedID = response.workspaceID;
       				watershed = response.featurecollection[1];
-      				console.log(watershed);
       				drawWatershed();
       				container3.innerHTML = "Get water rights data"
 				}
 				else {
-	      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+	      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
 	    		} 
 		  	}
 		 }; 
@@ -102,8 +113,8 @@ require([
     	//the map is in web mercator but display coordinates in geographic (lat, long)
         var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
         //display mouse coordinates
-        dom.byId("container1").innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
-        dom.byId("container1").style.display = "block";
+        coordButton.innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
+        coordButton.style.display = "block";
         //update url with coordinates
         usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
     };
@@ -128,7 +139,7 @@ require([
 	      				console.log(response);
     				}
     				else {
-		      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+		      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
 		    		} 
 		  	}
 		  	else{
@@ -153,5 +164,8 @@ var fillSymbol;
 var watershedID;
 var watershedGraphic;
 var watershedLayer;
+var instructions = document.getElementById('instructions');
+var coordButton = document.getElementById("container1");
+var update = document.getElementById("container2");
 var container3 = document.getElementById("container3");
 var request = new XMLHttpRequest();
