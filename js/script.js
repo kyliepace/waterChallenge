@@ -2,6 +2,7 @@ require([
     "dojo/ready",
     "dojo/parser",
     "esri/map",
+    "./src/geojsonlayer",
     "esri/layers/ArcGISTiledMapServiceLayer",
    	"esri/geometry/webMercatorUtils", 
    	"esri/SpatialReference",
@@ -16,6 +17,7 @@ require([
     ready,
     parser,
     Map,
+    GeoJsonLayer,
     ArcGISTiledMapServiceLayer,
    	webMercatorUtils, 
    	SpatialReference,
@@ -33,7 +35,7 @@ require([
 	        center: [-119.4179,36.7783],
 	        zoom: 7,
 	        smartNavigation: false,
-	        spatialReference: 3310
+	        spatialReference:  4326
 	    });
 	    console.log('created map');
 	    polygon = new Polygon();
@@ -50,8 +52,6 @@ require([
 	    map.on("load", function() {
 	    	map.hidePanArrows();
 	    	map.showZoomSlider();
-	        //after map loads, connect to listen to mouse move & drag events 
-	        drawWatershed();           //for testing purposes let's call this here
 	    });
 
 	    map.on("click", function(evt){
@@ -70,35 +70,32 @@ require([
     };
 
     var usgsRequest = function(){
-		//request.open("Get", usgsBasinUrl);
-	   //  	request.send();
-	   //  	request.onreadystatechange = function(){
-	   //  		var update = document.getElementById("container2");
-	   //  		if(request.readyState === 4) { //if response is ready
-		 	// 		update.style.display = "none";
-		 	// 		document.body.style.cursor = "auto";
-		  //   			if(request.status === 200) { //what to do with successful response
-		  //     				var response = JSON.parse(request.responseText);
-		  //     				console.log(response);
-		  //     				watershedID = response.workspaceID;
-		  //     				watershed = response.featurecollection[1].feature;
-		  //     				console.log(watershed);
-		  //     				drawWatershed();
-	   //  				}
-	   //  				else {
-			 //      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-			 //    		} 
-			 //  	}
-			 //  	else{
-			 //  		update.style.display = "block";
-			 //  		update.innerHTML = "Retrieving watershed data from USGS";
-			 //  		document.body.style.cursor = "wait";
-			 //  	} 
-			 // }; 
-
-			 /**** for testing purposes have the following two lines here ****/
-			container3.style.display = "block";
-			container3.innerHTML = "Get water rights data"
+		request.open("Get", usgsBasinUrl);
+		request.onreadystatechange = function(){
+    		var update = document.getElementById("container2");
+    		if(request.readyState === 4) { //if response is ready
+	 			update.style.display = "none";
+	 			document.body.style.cursor = "auto";
+	 			container3.style.display = "block";
+	    			if(request.status === 200) { //what to do with successful response
+	      				var response = JSON.parse(request.responseText);
+	      				watershedID = response.workspaceID;
+	      				watershed = response.featurecollection[1];
+	      				console.log(watershed);
+	      				drawWatershed();
+	      				container3.innerHTML = "Get water rights data"
+    				}
+    				else {
+		      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+		    		} 
+		  	}
+		  	else{
+		  		update.style.display = "block";
+		  		update.innerHTML = "Retrieving watershed data from USGS";
+		  		document.body.style.cursor = "wait";
+		  	} 
+		 }; 
+	    request.send();	
     };
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
@@ -107,29 +104,56 @@ require([
         dom.byId("container1").innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
         dom.byId("container1").style.display = "block";
         //update url with coordinates
-        usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.json?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=3310&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+        usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
     };
 
     var drawWatershed = function(){
-    	var rings = waterbasin.featurecollection[1].feature.features[0].geometry.rings[0]; 
-		polygon.addRing(rings);
-		polygon.spatialReference = map.spatialReference;
-      	// Create a symbol for rendering the graphic
-        watershedGraphic = new Graphic(polygon, fillSymbol, {keeper: true}) ;
-        watershedLayer = new GraphicsLayer({id: "basin"});  
-        watershedLayer.setScaleRange(0,0); //make sure it's visible at all scales
-        watershedLayer.setVisibility(true);
-        map.addLayer(watershedLayer);
-        map.reorderLayer(watershedLayer, 1);
-        console.log('added layer to map');
-        watershedLayer.add(watershedGraphic);
-        console.log('added graphic to layer');
-        watershedLayer.redraw();
+  //   	var rings = watershed.features[0].geometry.coordinates; 
+		// polygon.addRing(rings);
+		// polygon.spatialReference = map.spatialReference;
+  //     	// Create a symbol for rendering the graphic
+  //       watershedGraphic = new Graphic(polygon, fillSymbol, {keeper: true}) ;
+  //	    watershedLayer = new GraphicsLayer({id: "basin"});  
+  //       watershedLayer.setScaleRange(0,0); //make sure it's visible at all scales
+  //       watershedLayer.setVisibility(true);
+  //       map.addLayer(watershedLayer);
+  //       map.reorderLayer(watershedLayer, 1);
+  //       console.log('added layer to map');
+  //       watershedLayer.add(watershedGraphic);
+  //       console.log('added graphic to layer');
+  //       watershedLayer.redraw();
+
+  		var geoJsonLayer = new GeoJsonLayer({
+    		data: watershed
+		});
+
+		map.addLayer(geoJsonLayer);
     };
 
     var swrcbRequest = function(){
     	//send request to swrcb
+    	request = new XMLHttpRequest();
+    	request.onreadystatechange = function(){
+    		if(request.readyState === 4) { //if response is ready
+    			document.body.style.cursor = "auto";
+	    			if(request.status === 200) { //what to do with successful response
+	      				var response = JSON.parse(request.responseText);
+	      				response.addHeader("Access-Control-Allow-Origin", "*");
+	      				console.log(response);
+    				}
+    				else {
+		      			document.getElementById('info').innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+		    		} 
+		  	}
+		  	else{
+		  		document.body.style.cursor = "wait";
+		  	} 
+		}; 
+    	var swrcbUrl = "http://ciwqs.waterboards.ca.gov/ciwqs/ewrims/EWServlet?Page_From=EWWaterRightPublicSearch.jsp&Redirect_Page=EWWaterRightPublicSearchResults.jsp&Object_Expected=EwrimsSearchResult&Object_Created=EwrimsSearch&Object_Criteria=&Purpose=&subTypeCourtAdjSpec=&subTypeOtherSpec=&appNumber=&permitNumber=&licenseNumber=&waterHolderName=&source=&hucNumber=&watershed=RUSSIAN+RIVER";
+    	request.open('GET', swrcbUrl, true);
+    	request.send();
     	// http://ciwqs.waterboards.ca.gov/ciwqs/ewrims/EWServlet?Page_From=EWWaterRightPublicSearch.jsp&Redirect_Page=EWWaterRightPublicSearchResults.jsp&Object_Expected=EwrimsSearchResult&Object_Created=EwrimsSearch&Object_Criteria=&Purpose=&subTypeCourtAdjSpec=&subTypeOtherSpec=&appNumber=&permitNumber=&licenseNumber=&waterHolderName=&source=&hucNumber=&watershed=RUSSIAN+RIVER
+    	
     };
 
     ready(initialize); //run function
