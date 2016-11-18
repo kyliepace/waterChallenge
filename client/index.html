@@ -1,0 +1,39 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+	<title>Water Availability Analysis</title>
+	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="https://js.arcgis.com/3.18/dijit/themes/claro/claro.css" />
+	<link rel="stylesheet" href="https://js.arcgis.com/3.18/esri/css/esri.css" />
+	<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet' type='text/css'>
+</head>
+<body>
+	<div id="content">
+		<div id="map" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" style="padding: 0;"></div>
+		<div id="info">
+			<span id="instructions">Zoom in to select a watershed outlet at the proposed point of diversion</span>
+			<button id="container1" style="display: none"></button>
+			<div id="container2" class="blink"></div>
+			<button id="container3" style="display: none"></button>
+		</div>
+	</div>
+	<footer>
+		<div>
+		  	<p>
+				<a href="https://www.linkedin.com/in/kyliepace" target="_blank">
+					<i class="fa fa-linkedin-square" aria-hidden="true"></i>
+				</a>
+				<a href="https://github.com/kyliepace" target="_blank">
+					<i class="fa fa-github"></i>
+				</a>
+			</p>
+			</div>
+	</footer>
+	<script src="https://js.arcgis.com/3.18compact/"></script>
+	<script src="./js/vendor/terraformer/terraformer.min.js"></script>
+	<script src="./js/vendor/terraformer-arcgis-parser/terraformer-arcgis-parser.min.js"></script>
+	<script src="./js/script.js"></script>
+</body>
+</html>
