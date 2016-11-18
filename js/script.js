@@ -127,6 +127,7 @@ require([
     		data: watershed.feature
 		});
 		map.addLayer(geoJsonLayer);
+		map.setMapCursor("move");
     };
 
     var swrcbRequest = function(){
