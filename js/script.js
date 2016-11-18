@@ -5,7 +5,8 @@ require([
     "./js/src/geojsonlayer.js",
     "esri/layers/ArcGISTiledMapServiceLayer",
    	"esri/geometry/webMercatorUtils", 
-   	"esri/SpatialReference",
+   	"esri/geometry/Point",
+   	"esri/symbols/SimpleMarkerSymbol",
    	"esri/geometry/Polygon",
    	"esri/symbols/SimpleFillSymbol",
    	"esri/symbols/SimpleLineSymbol", "esri/Color",
@@ -20,7 +21,8 @@ require([
     GeoJsonLayer,
     ArcGISTiledMapServiceLayer,
    	webMercatorUtils, 
-   	SpatialReference,
+   	Point,
+   	SimpleMarkerSymbol,
    	Polygon,
    	SimpleFillSymbol,
    	SimpleLineSymbol, Color,
@@ -58,6 +60,7 @@ require([
 	    map.on("zoom-end", function(){
 	    	if(map.getZoom() >= 15){
 	    		map.setMapCursor("crosshair"); //make cursor = crosshair
+	    		instructions.innerHTML = "click within a stream to select the outlet"
 	    	}
 	    });
 
@@ -65,9 +68,6 @@ require([
 	    	console.log(map.getZoom());
 	    	if(map.getZoom() >= 15){
 	    		showCoordinates(evt);
-	    	}
-	    	else{
-	    		instructions.innerHTML = "Zoom in more to select an outlet";
 	    	}
 	    });
 
@@ -84,35 +84,38 @@ require([
 
     function usgsRequest(){
 		request.open("Get", usgsBasinUrl);
-		
 	    request.send();	
-
-	    request.onreadystatechange = function(){
-	    	console.log('request state change');
-    		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-    		update.style.display = "block"; //show the update container
-		  	update.innerHTML = "Retrieving watershed data from USGS";
-    		if(request.readyState === 4) { //if response is ready
-	 			update.style.display = "none";
-	 			document.body.style.cursor = "auto";
-	 			container3.style.display = "block";
-    			if(request.status === 200) { //what to do with successful response
-      				var response = JSON.parse(request.responseText);
-      				watershedID = response.workspaceID;
-      				watershed = response.featurecollection[1];
-      				drawWatershed();
-      				container3.innerHTML = "Get water rights data"
-				}
-				else {
-	      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-	    		} 
-		  	}
-		 }; 
     };
+    request.onreadystatechange = function(){
+    	console.log('request state change');
+		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+		update.style.display = "block"; //show the update container
+	  	update.innerHTML = "Retrieving watershed data from USGS";
+		if(request.readyState === 4) { //if response is ready
+ 			update.style.display = "none";
+ 			document.body.style.cursor = "auto";
+ 			container3.style.display = "block";
+			if(request.status === 200) { //what to do with successful response
+  				var response = JSON.parse(request.responseText);
+  				watershedID = response.workspaceID;
+  				watershed = response.featurecollection[1];
+  				drawWatershed();
+  				container3.innerHTML = "Get water rights data"
+			}
+			else {
+      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+    		} 
+	  	}
+	 }; 
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
         var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
-        //display mouse coordinates
+        //display coordinates within a new button and also on the map
+        var sms = new SimpleMarkerSymbol();
+        sms.setSize(20);
+        console.log(evt.mapPoint);
+        var graphic = new Graphic (new Point(evt.mapPoint), sms);
+        map.graphics.add(graphic);
         coordButton.innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
         coordButton.style.display = "block";
         //update url with coordinates
@@ -123,7 +126,6 @@ require([
   		var geoJsonLayer = new GeoJsonLayer({
     		data: watershed.feature
 		});
-
 		map.addLayer(geoJsonLayer);
     };
 
