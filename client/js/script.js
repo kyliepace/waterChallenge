@@ -83,30 +83,35 @@ require([
     };
 
     function usgsRequest(){
-		request.open("Get", usgsBasinUrl);
+		  request.open("Get", usgsBasinUrl);
+      request.onreadystatechange = usgsStateChange;
 	    request.send();	
     };
-    request.onreadystatechange = function(){
+
+    //if usgsStateChange doesn't work like this, I may have to define request.onreadystatechange outside of
+    // the usgsRequest function
+    function usgsStateChange(){
     	console.log('request state change');
-		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-		update.style.display = "block"; //show the update container
+  		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+  		update.style.display = "block"; //show the update container
 	  	update.innerHTML = "Retrieving watershed data from USGS";
-		if(request.readyState === 4) { //if response is ready
- 			update.style.display = "none";
- 			document.body.style.cursor = "auto";
- 			container3.style.display = "block";
-			if(request.status === 200) { //what to do with successful response
-  				var response = JSON.parse(request.responseText);
-  				watershedID = response.workspaceID;
-  				watershed = response.featurecollection[1];
-  				drawWatershed();
-  				container3.innerHTML = "Get water rights data"
-			}
-			else {
-      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-    		} 
+		  if(request.readyState === 4) { //if response is ready
+   			update.style.display = "none";
+   			document.body.style.cursor = "auto";
+   			container3.style.display = "block";
+  			if(request.status === 200) { //what to do with successful response
+    				var response = JSON.parse(request.responseText);
+    				watershedID = response.workspaceID;
+    				watershed = response.featurecollection[1];
+    				drawWatershed(); ////////// Draw the returned watershed on the map
+    				container3.innerHTML = "Get water rights data"
+  			}
+  			else {
+        		instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+      	} 
 	  	}
 	 }; 
+
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
         var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
@@ -125,37 +130,37 @@ require([
     var drawWatershed = function(){
   		var geoJsonLayer = new GeoJsonLayer({
     		data: watershed.feature
-		});
-		map.addLayer(geoJsonLayer);
-		map.setMapCursor("move");
+  		});
+  		map.addLayer(geoJsonLayer);
+  		map.setMapCursor("move");
     };
 
     var swrcbRequest = function(){
-    	//send request to swrcb
-    	request = new XMLHttpRequest();
+    	//send request to server for swrcb ewrims data
+      request.open('GET', '/pods', true);
     	request.onreadystatechange = function(){
+        document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+        update.style.display = "block"; //show the update container
+        update.innerHTML = "Retrieving water rights data from State Water Rights Control Board";
     		if(request.readyState === 4) { //if response is ready
     			document.body.style.cursor = "auto";
-	    			if(request.status === 200) { //what to do with successful response
-	      				var response = JSON.parse(request.responseText);
-	      				response.addHeader("Access-Control-Allow-Origin", "*");
-	      				console.log(response);
-    				}
-    				else {
-		      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-		    		} 
+          update.style.display = "none";
+    			if(request.status === 200) { //what to do with successful response
+      				var response = JSON.parse(request.responseText);
+      				console.log(response);
+  				}
+  				else {
+	      			instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+	    		} 
 		  	}
 		  	else{
 		  		document.body.style.cursor = "wait";
 		  	} 
-		}; 
-    	var swrcbUrl = "http://ciwqs.waterboards.ca.gov/ciwqs/ewrims/EWServlet?Page_From=EWWaterRightPublicSearch.jsp&Redirect_Page=EWWaterRightPublicSearchResults.jsp&Object_Expected=EwrimsSearchResult&Object_Created=EwrimsSearch&Object_Criteria=&Purpose=&subTypeCourtAdjSpec=&subTypeOtherSpec=&appNumber=&permitNumber=&licenseNumber=&waterHolderName=&source=&hucNumber=&watershed=RUSSIAN+RIVER";
-    	request.open('GET', swrcbUrl, true);
-    	request.send();
-    	// http://ciwqs.waterboards.ca.gov/ciwqs/ewrims/EWServlet?Page_From=EWWaterRightPublicSearch.jsp&Redirect_Page=EWWaterRightPublicSearchResults.jsp&Object_Expected=EwrimsSearchResult&Object_Created=EwrimsSearch&Object_Criteria=&Purpose=&subTypeCourtAdjSpec=&subTypeOtherSpec=&appNumber=&permitNumber=&licenseNumber=&waterHolderName=&source=&hucNumber=&watershed=RUSSIAN+RIVER
-    	
+  		}; 
+      request.send();
     };
 
+    ////////* GET THIS PARTY STARTED  *///////
     ready(initialize); //run function
 });
 
@@ -169,6 +174,6 @@ var watershedGraphic;
 var watershedLayer;
 var instructions = document.getElementById('instructions');
 var coordButton = document.getElementById("container1");
-var update = document.getElementById("container2");
+var update = document.getElementById("update");
 var container3 = document.getElementById("container3");
 var request = new XMLHttpRequest();
