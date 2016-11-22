@@ -65,14 +65,19 @@ require([
 	    map.on("zoom-end", function(){
 	    	if(map.getZoom() >= 15){
 	    		map.setMapCursor("crosshair"); //make cursor = crosshair
-	    		instructions.innerHTML = "click within a stream to select the outlet"
+	    		instructions.innerHTML = "click within a stream to select the proposed point of diversion";
 	    	}
+        else{
+          map.setMapCursor("move");
+          instructions.innerHTML = "Zoom in to select the proposed point of diversion";
+        }
 	    });
 
 	    map.on("click", function(evt){
 	    	console.log(map.getZoom());
 	    	if(map.getZoom() >= 15){
 	    		showCoordinates(evt);
+          flowlineQuery(); //for testing purposes run this here
 	    	}
 	    });
 
@@ -125,36 +130,43 @@ require([
         mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
         //display coordinates within a new button and also on the map
         var sms = new SimpleMarkerSymbol();
-        sms.setSize(20);
-        console.log(evt.mapPoint);
+        sms.setSize(10);
+        sms.setStyle("STYLE_CIRCLE");
         var graphic = new Graphic (new Point(evt.mapPoint), sms);
         map.graphics.add(graphic);
         coordButton.innerHTML = "Calculate basin from "+ mp.x.toFixed(5) + ", " + mp.y.toFixed(5);
         coordButton.style.display = "block";
         //update url with coordinates
         usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
-
     };
 
     var flowlineQuery = function(){
+      console.log(mp);
+      //build tolerance envelope around click
+      var mapWidth = map.extent.getWidth();
+      var pixelWidth = mapWidth/map.width;
+      var tolerance = 10 * pixelWidth;
+      var queryExtent = new esri.geometry.Extent(1,1,tolerance,tolerance,4326);
       //initialize query task
-      queryTask = new QueryTask("http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer");
-
+      queryTask = new QueryTask("http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0");
       //initialize query
       query = new Query();
+      query.geometry = queryExtent.centerAt(mp);
+      query.units = "meters";
+      query.distance = 5; //give query a buffer of 5 meters from the selected coordinates
       query.returnGeometry = true;
-      query.geometry = mp;
-      query.spatialRelationship = Query.SPATIAL_REL_CONTAINS;
-      query.where = //"FIELD = 'string' "; 
-      //query.outFields = ["CITY_NAME", "STATE_NAME", "POP1990"];
-      query.returnGeometry = true;
-      query.execute(query, showResults);
+      //query.geometryPrecision = 1;
+      query.spatialRelationship = Query.SPATIAL_REL_TOUCHES;
+      //query.where = //"FIELD = 'string' "; 
+      //query.outFields = ["ReachCode"];
+      queryTask.execute(query, showResults, showError);
     };
 
-    function showResults(featureSet){
+    var showResults = function(featureSet){
       //Performance enhancer - assign featureSet array to a single variable.
       var resultFeatures = featureSet.features;
       //Loop through each feature returned
+      console.log(featureSet);
       for (var i=0, il=resultFeatures.length; i<il; i++) {
         //Get the current feature from the featureSet.
         //Feature is a graphic
@@ -167,6 +179,10 @@ require([
         //Add graphic to the map graphics layer.
         map.graphics.add(graphic);
       }
+    };
+
+    var showError = function(error){
+      console.log(error);
     };
 
     var drawWatershed = function(){
