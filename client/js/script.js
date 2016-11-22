@@ -13,6 +13,8 @@ require([
    	"esri/graphic",
    	"esri/layers/FeatureLayer",
    	"esri/layers/GraphicsLayer",
+    "esri/tasks/QueryTask",
+    "esri/tasks/query",
    	"dojo/dom"
 ], function (
     ready,
@@ -29,6 +31,8 @@ require([
    	Graphic,
   	FeatureLayer,
   	GraphicsLayer,
+    QueryTask,
+    Query,
    	dom
 ) {
     function initialize (){
@@ -55,6 +59,7 @@ require([
 	    	map.hidePanArrows();
 	    	map.showZoomSlider();
 	    	map.setMapCursor("move");
+        //swrcbRequest() //for testing purposes put this here
 	    });
 
 	    map.on("zoom-end", function(){
@@ -75,6 +80,9 @@ require([
 	    document.getElementById("container1").addEventListener("click", function(){
 	    	this.disabled = "disabled";
 	    	usgsRequest(); 
+        // query flowline service for flowline containing the mp
+        flowlineQuery();
+        // plot returned flowline(s)
 	    });
 	    //when container3 is clicked, get diverter info from swrcb
 	    document.getElementById("container3").addEventListener("click", function(){
@@ -114,7 +122,7 @@ require([
 
     function showCoordinates(evt) {
     	//the map is in web mercator but display coordinates in geographic (lat, long)
-        var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+        mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
         //display coordinates within a new button and also on the map
         var sms = new SimpleMarkerSymbol();
         sms.setSize(20);
@@ -125,6 +133,40 @@ require([
         coordButton.style.display = "block";
         //update url with coordinates
         usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+
+    };
+
+    var flowlineQuery = function(){
+      //initialize query task
+      queryTask = new QueryTask("http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer");
+
+      //initialize query
+      query = new Query();
+      query.returnGeometry = true;
+      query.geometry = mp;
+      query.spatialRelationship = Query.SPATIAL_REL_CONTAINS;
+      query.where = //"FIELD = 'string' "; 
+      //query.outFields = ["CITY_NAME", "STATE_NAME", "POP1990"];
+      query.returnGeometry = true;
+      query.execute(query, showResults);
+    };
+
+    function showResults(featureSet){
+      //Performance enhancer - assign featureSet array to a single variable.
+      var resultFeatures = featureSet.features;
+      //Loop through each feature returned
+      for (var i=0, il=resultFeatures.length; i<il; i++) {
+        //Get the current feature from the featureSet.
+        //Feature is a graphic
+        var graphic = resultFeatures[i];
+        graphic.setSymbol(symbol);
+
+        //Set the infoTemplate.
+        graphic.setInfoTemplate(infoTemplate);
+
+        //Add graphic to the map graphics layer.
+        map.graphics.add(graphic);
+      }
     };
 
     var drawWatershed = function(){
@@ -157,6 +199,7 @@ require([
 		  		document.body.style.cursor = "wait";
 		  	} 
   		}; 
+      // send request with flowline and coordinates. server should return list of downstream diverters on that flowline
       request.send();
     };
 
@@ -165,6 +208,7 @@ require([
 });
 
 var map = null;
+var mp;
 var usgsBasinUrl;
 var watershed;
 var polygon;

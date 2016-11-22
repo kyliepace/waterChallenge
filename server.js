@@ -15,21 +15,24 @@ var connection = mysql.createConnection({
   database : 'heroku_cb2952336855801'
 });
  
-connection.connect(
+connection.connect( function(){
   console.log('hey, we connected to the database!');
-);
+});
 
 app.get('/pods', function(req, res){
   res.send('responding to request');
   console.log('hey the client made a request');
-}); //run a function when the client requests a list of downstream pods
+  //query a list of downstream pods
+  // *** ideas ****//
+  // 1. plot all diverters and let the user select en masse which ones to include
 
-//write a function that queries downstream pods 
-connection.query('SELECT * FROM eWRIMS', function(err, rows, fields) {
-  if (err) throw err;
- 
-  console.log('querying from database');
-});
+  // 2. apply and query CA flowpath service for flowpath the contains the selected coordinates,
+  // then query a table where the coordinates are +/- on the selected path
+  connection.query('SELECT * FROM eWRIMS', function(err, rows, fields) {
+    if (err) throw err;
+    console.log('querying from database');
+  });
+}); 
  
 connection.end();
 
