@@ -95,16 +95,18 @@ require([
     ////**** FUNCTION LIBRARY *****//////////////
     function showCoordinates(evt) {
       //the map is in web mercator but display coordinates in geographic (lat, long)
-        mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
-        //display coordinates within a new button and also on the map
-        var sms = new SimpleMarkerSymbol();
-        sms.setSize(10);
-        sms.setStyle("STYLE_X");
-        var diversion = new Graphic (new Point(evt.mapPoint), sms);
-        map.graphics.add(diversion);
+      mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+      //display coordinates within a new button and also on the map
+      var sms = new SimpleMarkerSymbol();
+      sms.setSize(10);
+      sms.setStyle("STYLE_X");
+      var diversion = new Graphic (new Point(evt.mapPoint), sms);
+      map.graphics.add(diversion);
     };
 
+    //find the reach code of the flowline that touches the proposed point of diversion
     var findReachCode = function(){
+      map.setMapCursor("wait");
       // make tolerance envelope
       var xmin = (mp.x) - 0.00025;
       var ymin = (mp.y) - 0.00025;
@@ -114,7 +116,7 @@ require([
       featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+xmin+"%2C+"+ymin+"%2C+"+xmax+"%2C+"+ymax+"&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=ReachCode&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
       featureServiceRequest(); //find flowline 
     };
-    // request flowline data from nds feature service
+    // request flowline(s) from nds feature service
     var featureServiceRequest = function(){
       request.open("Get", featureServiceUrl);
       request.onreadystatechange = featureServiceChange;
@@ -138,21 +140,18 @@ require([
         } 
       }
     };
+    // find all flowlines matching reach code
     var findFlowlines = function(){
       console.log(reachCode);
       console.log(typeof(reachCode));
       //change featureServiceUrl to find all flowlines with the first 8 digits of the reach code
-      featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=Left%28ReachCode%2C+8%29+%3D+%"+reachCode+"%22&inSR=&resultType=none&distance=&units=esriSRUnit_Meter&outFields=ReachCode&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
+      featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=Left%28ReachCode%2C+8%29+%3D+%22"+reachCode.slice(0,8).toString()+"%22&objectIds=&time=&geometry=&geometryType=&inSR=&resultType=none&distance=&units=esriSRUnit_Meter&outFields=ReachCode&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
       console.log(featureServiceUrl);
       featureServiceRequest(); //run request again, this time with updated featureServiceUrl
     };
+    // draw flowline(s) on map
     var showFlowLines = function(results){
       button1.style.display = "block";
-      // var isFirstTime = true;
-      // if(button1.style.display === "block"){
-      //   isFirstTime = false;
-      // };
-      // button1.style.display = (isFirstTime ? "block": "none"); //give user button to find all flowlines only if needed 
       var flowlineLayer = new GeoJsonLayer({
         data: results
       });
@@ -160,6 +159,7 @@ require([
       map.setMapCursor("move");
     };
 
+    // request waterbasin data from usgs based on coordinates
     function usgsRequest(){
       var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
       request.open("Get", usgsBasinUrl);
@@ -185,7 +185,7 @@ require([
         } 
       }
     }; 
-
+    // draw watershed on map
     var drawWatershed = function(){
   		var watershedLayer = new GeoJsonLayer({
     		data: watershed.feature
@@ -194,6 +194,7 @@ require([
   		map.setMapCursor("move");
     };
 
+    // retrieve all water rights holders 
     var swrcbRequest = function(){
     	//send flowline info to server to get swrcb list of diverters
       request.open('GET', '/pods', true);
