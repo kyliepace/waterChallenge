@@ -70,27 +70,51 @@ require([
 
 	    map.on("click", function(evt){
 	    	if(map.getZoom() >= 10){
-	    		showCoordinates(evt, "flow");
+	    		showCoordinates(evt); //place marker on map
+          findReachCode() //find reachcode of intersecting flowline
 	    	}
 	    });
 
 	    //when container1 is clicked, send coordinates to arcgis server to find flowline
-	    coordButton.addEventListener("click", function(){
+	    button1.addEventListener("click", function(){
 	    	this.disabled = "disabled";
-	    	featureServiceRequest();
+	    	findFlowlines();
 	    });
-	    //when container2 is clicked, get diverter info from swrcb
-	    container2.addEventListener("click", function(){
+	    //when button2 is clicked, get diverter info from swrcb
+	    button2.addEventListener("click", function(){
+        this.disabled = "disabled";
 	    	swrcbRequest();
 	    });
       //when container 3 is clicked, get waterbasin from usgs
-      container3.addEventListener("click", function(){
+      button3.addEventListener("click", function(){
         showCoordinates(evt, "basin");
       });
     };
 
 
     ////**** FUNCTION LIBRARY *****//////////////
+    function showCoordinates(evt) {
+      //the map is in web mercator but display coordinates in geographic (lat, long)
+        mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+        //display coordinates within a new button and also on the map
+        var sms = new SimpleMarkerSymbol();
+        sms.setSize(10);
+        sms.setStyle("STYLE_X");
+        var diversion = new Graphic (new Point(evt.mapPoint), sms);
+        map.graphics.add(diversion);
+    };
+
+    var findReachCode = function(){
+      // make tolerance envelope
+      var xmin = (mp.x) - 0.00025;
+      var ymin = (mp.y) - 0.00025;
+      var xmax = (mp.x) + 0.00025;
+      var ymax = (mp.y) + 0.00025;
+      //update featureServiceUrl
+      featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+xmin+"%2C+"+ymin+"%2C+"+xmax+"%2C+"+ymax+"&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=ReachCode&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
+      featureServiceRequest(); //find flowline 
+    };
+    // request flowline data from nds feature service
     var featureServiceRequest = function(){
       request.open("Get", featureServiceUrl);
       request.onreadystatechange = featureServiceChange;
@@ -99,82 +123,68 @@ require([
     var featureServiceChange = function(){
       document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
       update.style.display = "block"; //show the update container
-      update.innerHTML = "Finding flowline from National Hydrography Dataset";
+      update.innerHTML = "Requesting data from National Hydrography Dataset";
       if(request.readyState === 4) { //if response is ready
         document.body.style.cursor = "auto";
+        update.style.display = "none";
         if(request.status === 200) { //what to do with successful response
-            update.style.display = "none";
             var response = JSON.parse(request.responseText);
+            console.log(response);
+            reachCode = response.features[0].properties.ReachCode;
             showFlowLines(response);
-            container3.innerHTML = "Get water rights data"
         }
         else {
-            update.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+            instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
         } 
       }
     };
-    function usgsRequest(){
-      request.open("Get", usgsBasinUrl);
-      request.onreadystatechange = usgsStateChange;
-	    request.send();	
+    var findFlowlines = function(){
+      console.log(reachCode);
+      console.log(typeof(reachCode));
+      //change featureServiceUrl to find all flowlines with the first 8 digits of the reach code
+      featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=Left%28ReachCode%2C+8%29+%3D+%"+reachCode+"%22&inSR=&resultType=none&distance=&units=esriSRUnit_Meter&outFields=ReachCode&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
+      console.log(featureServiceUrl);
+      featureServiceRequest(); //run request again, this time with updated featureServiceUrl
     };
-
-    function usgsStateChange(){
-  		document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-  		update.style.display = "block"; //show the update container
-	  	update.innerHTML = "Retrieving watershed data from USGS";
-		  if(request.readyState === 4) { //if response is ready
-   			document.body.style.cursor = "auto";
-  			if(request.status === 200) { //what to do with successful response
-            update.style.display = "none";
-    				var response = JSON.parse(request.responseText);
-    				watershedID = response.workspaceID;
-    				watershed = response.featurecollection[1];
-    				drawWatershed(); ////////// Draw the returned watershed on the map
-  			}
-  			else {
-        		update.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-      	} 
-	  	}
-	  }; 
-
-    function showCoordinates(evt, func) {
-    	//the map is in web mercator but display coordinates in geographic (lat, long)
-        mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
-        //display coordinates within a new button and also on the map
-        var sms = new SimpleMarkerSymbol();
-        sms.setSize(10);
-        sms.setStyle("STYLE_X");
-        
-        if(func === 'flow'){
-          var diversion = new Graphic (new Point(evt.mapPoint), sms);
-          map.graphics.add(diversion);
-          // make tolerance envelope
-          var xmin = (mp.x) - 0.00025;
-          var ymin = (mp.y) - 0.00025;
-          var xmax = (mp.x) + 0.00025;
-          var ymax = (mp.y) + 0.00025;
-          //update featureServiceUrl
-          featureServiceUrl = "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+xmin+"%2C+"+ymin+"%2C+"+xmax+"%2C+"+ymax+"&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=";
-          // show button for next step
-          coordButton.innerHTML = "Find flowline";
-          coordButton.style.display = "block";
-        }
-        else if(func === 'basin'){
-          var senior = new Graphic (new Point(evt.mapPoint), sms);
-          map.graphics.add(senior);
-          //update url with coordinates
-          usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
-        }
-    };
-
     var showFlowLines = function(results){
+      button1.style.display = "block";
+      // var isFirstTime = true;
+      // if(button1.style.display === "block"){
+      //   isFirstTime = false;
+      // };
+      // button1.style.display = (isFirstTime ? "block": "none"); //give user button to find all flowlines only if needed 
       var flowlineLayer = new GeoJsonLayer({
         data: results
       });
       map.addLayer(flowlineLayer);
       map.setMapCursor("move");
     };
+
+    function usgsRequest(){
+      var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+      request.open("Get", usgsBasinUrl);
+      request.onreadystatechange = usgsStateChange;
+      request.send(); 
+    };
+
+    function usgsStateChange(){
+      document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+      update.style.display = "block"; //show the update container
+      update.innerHTML = "Retrieving watershed data from USGS";
+      if(request.readyState === 4) { //if response is ready
+        document.body.style.cursor = "auto";
+        update.style.display = "none";
+        if(request.status === 200) { //what to do with successful response
+            var response = JSON.parse(request.responseText);
+            watershedID = response.workspaceID;
+            watershed = response.featurecollection[1];
+            drawWatershed(); ////////// Draw the returned watershed on the map
+        }
+        else {
+            instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+        } 
+      }
+    }; 
 
     var drawWatershed = function(){
   		var watershedLayer = new GeoJsonLayer({
@@ -216,17 +226,17 @@ require([
 
 var map = null;
 var mp;
-var usgsBasinUrl;
 var featureServiceUrl;
 var watershed;
+var reachCode;
 var polygon;
 var fillSymbol;
 var watershedID;
 var watershedGraphic;
 var watershedLayer;
 var instructions = document.getElementById('instructions');
-var coordButton = document.getElementById("container1");
+var button1= document.getElementById("button1");
 var update = document.getElementById("update");
-var container2 = document.getElementById("container2");
+var button2 = document.getElementById("button2");
 var request = new XMLHttpRequest();
-var container3 = document.getElementById("container3");
+var button3 = document.getElementById("button3");

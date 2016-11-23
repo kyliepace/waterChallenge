@@ -2,13 +2,22 @@ Created for the [California Water Data Challenge](http://waterchallenge.data.ca.
 
 The goal of this app is to assist Permitting & Licensing in generating a Water Supply Report for a proposed diversion.
 
-Uses esri arcGIS javascript 3.18 api to generate coordinates of user's click on map. Sends coordinates to [USGS streamstats api](http://streamstatsags.cr.usgs.gov/streamstatsservices/#/) to return watershed and streamflow information.
+- Uses esri arcGIS javascript 3.18 api to generate coordinates of proposed point of diversion
+
+- Returns [flowline](http://www.arcgis.com/home/item.html?id=6510f031d0a74f6ab879fe73895164eb#overview) that touches coordinates
+
+- Finds all downstream flowlines
+
+- Returns list of senior water rights holders on all downstream flowlines
+
+- User selects most-downstream senior water right holder
+
+- Coordinates of most-downstream senior water right holder sent to [USGS streamstats](http://streamstatsags.cr.usgs.gov/streamstatsservices/#/) to return watershed and streamflow information.
 
 To do:
-- add calendar input for seasonal withdrawals?
-- migrate to cloud9: this is gonna be server-side!
-- php to query downstream senior rights from selected outlet from mySQL database?
+- find all downstream flowlines
+- query water rights on all downstream flowlines
+- plot returned water rights
 - draw watershed of downstream-most senior right holder
-- find all senior right holders in downstream-most watershed
-- sum diversion of all senior right holders
-- get Austin & Matt to confirm this process
+- add calendar input for seasonal withdrawals?
+- style geojson?
