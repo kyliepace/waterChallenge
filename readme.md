@@ -4,9 +4,9 @@ The goal of this app is to assist Permitting & Licensing in generating a Water S
 
 - Uses esri arcGIS javascript 3.18 api to generate coordinates of proposed point of diversion
 
-- Returns [flowline](http://www.arcgis.com/home/item.html?id=6510f031d0a74f6ab879fe73895164eb#overview) that touches coordinates
+- Traces [downstream flowlines](https://txpub.usgs.gov/DSS/streamer/api/3.14/web/index.html)
 
-- Finds all downstream flowlines
+- Returns [flowline](http://www.arcgis.com/home/item.html?id=6510f031d0a74f6ab879fe73895164eb#overview) info
 
 - Returns list of senior water rights holders on all downstream flowlines
 
@@ -15,9 +15,9 @@ The goal of this app is to assist Permitting & Licensing in generating a Water S
 - Coordinates of most-downstream senior water right holder sent to [USGS streamstats](http://streamstatsags.cr.usgs.gov/streamstatsservices/#/) to return watershed and streamflow information.
 
 To do:
-- find all downstream flowlines
+- upload swrcb data to arcgis online service
+- query water rights touching traced flowline
 - query water rights on all downstream flowlines
 - plot returned water rights
 - draw watershed of downstream-most senior right holder
 - add calendar input for seasonal withdrawals?
-- style geojson?

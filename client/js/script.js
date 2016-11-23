@@ -71,7 +71,7 @@ require([
 	    map.on("click", function(evt){
 	    	if(map.getZoom() >= 10){
 	    		showCoordinates(evt); //place marker on map
-          findReachCode() //find reachcode of intersecting flowline
+          traceDownstream() //find reachcode of intersecting flowline
 	    	}
 	    });
 
@@ -101,9 +101,30 @@ require([
       sms.setSize(10);
       sms.setStyle("STYLE_X");
       var diversion = new Graphic (new Point(evt.mapPoint), sms);
-      map.graphics.add(diversion);
+      //map.graphics.add(diversion);
     };
 
+    var traceDownstream = function(){
+      //trace downstream
+      trace_api.addTrace({
+          "map": map,
+          "x": mp.x,
+          "y": mp.y,
+          "traceLineColor" : [46, 138, 138, 1],
+          "traceLineStyle" : "STYLE_SHORTDASHDOT",
+          "originPointColor" : [46, 138, 138, 1],
+          "originPoint": "infoHover",
+          "clearOldTraces": true
+      });
+
+      if(trace_api.isTracing){
+        update.style.display = "block"; //show the update container
+        update.innerHTML = "Tracing flowline with USGS Streamer";
+      }
+      else{
+        button1.style.display = "block"; //show next button upon completion of trace
+      }
+    }
     //find the reach code of the flowline that touches the proposed point of diversion
     var findReachCode = function(){
       map.setMapCursor("wait");
