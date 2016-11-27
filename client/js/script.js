@@ -16,6 +16,7 @@ require([
    	"esri/layers/FeatureLayer",
    	"esri/layers/GraphicsLayer",
     "esri/InfoTemplate",
+    "dijit/TooltipDialog",
     "esri/SpatialReference",
     "esri/tasks/query",
    	"dojo/dom"
@@ -37,6 +38,7 @@ require([
   	FeatureLayer,
   	GraphicsLayer,
     InfoTemplate,
+    TooltipDialog,
     SpatialReference,
     Query,
    	dom
@@ -110,22 +112,23 @@ require([
       //display coordinates within a new button and also on the map
       var sms = new SimpleMarkerSymbol();
       sms.setSize(10);
-      sms.setStyle("STYLE_X");
+      sms.setStyle("STYLE_CIRCLE");
       var proposed = new Graphic (new Point(evt.mapPoint), sms);
-      //map.graphics.add(proposed);
+      map.graphics.add(proposed);
     };
 
     var traceDownstream = function(){ //use USGS Streamer tool to trace flowline downstream from proposed POD
       trace_api.addTrace({
-          "map": map,
-          "x": mp.x,
-          "y": mp.y,
-          "traceLineColor" : [46, 138, 138, 1],
-          "traceLineStyle" : "STYLE_SHORTDASHDOT",
-          "originPointColor" : [46, 138, 138, 1],
-          "originPoint": "infoHover",
-          "clearOldTraces": true,
-          //"xy_radiusM": 100 //find nearest 1:1,000,000-scale stream within 100m
+        "map": map,
+        "x": mp.x,
+        "y": mp.y,
+        "traceLineColor" : [46, 138, 138, 1],
+        "traceLineStyle" : "STYLE_SHORTDASHDOT",
+        "originPointColor" : [46, 138, 138, 1],
+        "originPoint": "infoHover",
+        "clearOldTraces": true,
+        //"xy_radiusM": 100 //find nearest 1:1,000,000-scale stream within 100m
+        "originPointTextSymbol": trace_api.lastTraceInfo.originStreamName
       });
       if(trace_api.isTracing){
         update.style.display = "block"; //show the update container
@@ -145,30 +148,63 @@ require([
           SimpleMarkerSymbol.STYLE_CROSS).setColor(
           new Color([255,0,0,0.5]));
       var diverterLayer = new GraphicsLayer();
-      var info = new InfoTemplate("Water Right POD", "Stream: {$STREAM}");
-      diverterLayer.setInfoTemplate(info);
+      //var info = new InfoTemplate("Water Right POD", "Stream: ${stream}");
+      //diverterLayer.setInfoTemplate(info);
 
       for(var i = 1; i < ewrims.length; i++){
-        var diversion = new Point([ewrims[i].FIELD19, ewrims[i].FIELD18]);
+        var record = ewrims[i];
+        var diversion = new Point([record.FIELD19, record.FIELD18]);
         if(trace.contains(diversion)){ //only check distance for points within the extent
           var attr = {
-            STREAM: ewrims[i].FIELD22,
-            FACE: ewrims[i].FIELD46
+            stream: record.FIELD22,
+            face: record.FIELD46,
+            site: record.FIELD32,
+            rightId: record.FIELD40,
+            directDiv: record.FIELD41,
+            divToStorage: record.FIELD42,
+            divType: record.FIELD47,
+            wrType: record.FIELD49,
+            wrStatus: record.FIELD50,
+            podStatus: record.FIELD45
           };
           var graphic = new Graphic(diversion, sms, attr, info);
           diverterLayer.add(graphic);
         }; 
       };
+      diverterLayer.enableMouseEvents(); 
       map.addLayer(diverterLayer);
       button1.style.display = "none";
       instructions.innerHTML = "click on a water right diversion to select it";
       button2.style.display = "block";
-      selectPoints();
+      selectPoints(diverterLayer);
     };
-    var selectPoints = function(){
-      //do map.graphics(choose which layer?).on('click') to return a graphic
+    var selectPoints = function(layer){
+      //make a popup appear upon hover
+      dialog = new TooltipDialog({
+        id: "tooltipDialog",
+        style: "position: absolute; width: 250px; font: normal normal normal 10pt Helvetica;z-index:100"
+      });
+      dialog.startup();
+      diverterLayer.on('mouse-over', function(evt){
+        var t = "<b>${stream}";
+        var content = esriLang.substitute(evt.graphic.attributes,t);
+        dialog.setContent(content);
+        domStyle.set(dialog.domNode, "opacity", 0.85);
+        dijitPopup.open({
+          popup: dialog,
+          x: evt.pageX,
+          y: evt.pageY
+        });
+      });
+      diverterLayer.on('mouse-out', function(evt){
+        dijitPopup.close(dialog);
+      });
+      //do layer.on('click') to return a graphic
       //toggle that graphic's marker symbol color
       // add that graphic (or just its attributes?) to a table
+      diverterLayer.on('click', function(evt){
+        //push evt.graphic into a new graphic layer
+      });
     };
     var makeTable = function(){
       console.log(map.graphics);
