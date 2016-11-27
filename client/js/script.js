@@ -15,6 +15,7 @@ require([
    	"esri/graphic",
    	"esri/layers/FeatureLayer",
    	"esri/layers/GraphicsLayer",
+    "esri/InfoTemplate",
     "esri/SpatialReference",
     "esri/tasks/query",
    	"dojo/dom"
@@ -35,6 +36,7 @@ require([
    	Graphic,
   	FeatureLayer,
   	GraphicsLayer,
+    InfoTemplate,
     SpatialReference,
     Query,
    	dom
@@ -80,7 +82,7 @@ require([
 	    });
 
 	    map.on("click", function(evt){
-	    	if(map.getZoom() >= 10){
+	    	if(map.getZoom() >= 10 && !trace_api.haveTrace()){
 	    		showCoordinates(evt); //place marker on map
           traceDownstream() //find reachcode of intersecting flowline
 	    	}
@@ -114,7 +116,6 @@ require([
     };
 
     var traceDownstream = function(){ //use USGS Streamer tool to trace flowline downstream from proposed POD
-      //trace downstream
       trace_api.addTrace({
           "map": map,
           "x": mp.x,
@@ -124,43 +125,48 @@ require([
           "originPointColor" : [46, 138, 138, 1],
           "originPoint": "infoHover",
           "clearOldTraces": true,
-          "xy_radiusM": 50 //find nearest 1:1,000,000-scale stream within 50m
+          //"xy_radiusM": 100 //find nearest 1:1,000,000-scale stream within 100m
       });
-      while(trace_api.isTracing){
+      if(trace_api.isTracing){
         update.style.display = "block"; //show the update container
         update.innerHTML = "Tracing flowline with USGS Streamer";
       }
       trace_api.on("trace-success", function(){
         instructions.innerHTML = "";
         button1.style.display = "block"; //show next button upon completion of trace
-        map.setMapCursor("move");
+        map.setMapCursor("auto");
       });
     };
 
     var queryDiverters = function(){ // find all water right diversions within flowline extent
       //show only the diverters within the traced streams extent
       var trace = trace_api.allTraceExtents;
-      var multipoint = new Multipoint(new SpatialReference({ wkid:4326 }));
-      var attr = [];
+      var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
+          SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
+          new Color([255,0,0,0.5]));
+      var info = new InfoTemplate("Water Right POD", "Stream: {$STREAM}");
+
       for(var i = 1; i < ewrims.length; i++){
         var diversion = new Point([ewrims[i].FIELD19, ewrims[i].FIELD18]);
         if(trace.contains(diversion)){ //only check distance for points within the extent
-          attr[i-1] = {
+          var attr = {
             STREAM: ewrims[i].FIELD22,
             FACE: ewrims[i].FIELD46
           };
-          multipoint.addPoint(diversion);
+          var graphic = new Graphic(diversion, sms, attr, info);
+          map.graphics.add(graphic);
         }; 
       };
-      showGraphic(multipoint, attr);
     };
-    var showGraphic = function(geometry, attributes){
-      var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
-          SimpleMarkerSymbol.STYLE_CROSS).setColor(
-          new Color([255,0,0,0.5]));
-      var graphic = new Graphic(geometry, sms, attributes);
-      map.graphics.add(graphic);
-    };
+    // var showGraphic = function(geometry){
+    //   var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
+    //       SimpleMarkerSymbol.STYLE_CROSS).setColor(
+    //       new Color([255,0,0,0.5]));
+    //   var graphic = new Graphic(geometry, sms);
+    //   var info = new InfoTemplate("Water Right POD", "Stream: {$STREAM}");
+    //   graphic.setInfoTemplate(info);
+    //   map.graphics.add(graphic);
+    // };
     // var showLayer = function(features){
     //   var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
     //     SimpleMarkerSymbol.STYLE_CROSS).setColor(
