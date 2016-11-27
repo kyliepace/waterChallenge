@@ -16,8 +16,10 @@ require([
    	"esri/layers/FeatureLayer",
    	"esri/layers/GraphicsLayer",
     "esri/geometry/geometryEngine",
+    "esri/tasks/GeometryService",
     "esri/SpatialReference",
     "esri/tasks/query",
+    "esri/tasks/DistanceParameters",
    	"dojo/dom"
 ], function (
     ready,
@@ -37,8 +39,10 @@ require([
   	FeatureLayer,
   	GraphicsLayer,
     geometryEngine,
+    GeometryService,
     SpatialReference,
     Query,
+    DistanceParameters,
    	dom
 ) {
     function initialize (){
@@ -134,11 +138,15 @@ require([
         update.style.display = "block"; //show the update container
         update.innerHTML = "Tracing flowline with USGS Streamer";
       }
-      instructions.innerHTML = "";
-      button1.style.display = "block"; //show next button upon completion of trace
-    }
+      trace_api.on("trace-success", function(){
+        instructions.innerHTML = "";
+        button1.style.display = "block"; //show next button upon completion of trace
+        map.setMapCursor("move");
+      });
+    };
 
     var queryDiverters = function(){
+      //build a polyline of the traced streams
       var traceGraphics = map._layers.tracePolyLine.graphics;
       var tracePaths = []; //flatten the trace_api paths into one array
       for(var j = 0; j < traceGraphics.length; j++){
@@ -146,50 +154,84 @@ require([
           tracePaths.push(traceGraphics[j].geometry.paths[0][n]); //push each coordinate pair into the array
         }
       }
-
       //build array into a polyline geometry
       var tracePolyline = new Polyline(tracePaths);
       tracePolyline.setSpatialReference(new SpatialReference(102100));
-      console.log(tracePolyline);
 
-      //build features array of points
+      //show only the diverters within the traced streams extent
       var multipoint = new Multipoint(new SpatialReference({ wkid:4326 }));
+      var waterRights = []; //create array to copy water right info
+      var trace = trace_api.allTraceExtents;
+      
+      var sum = 0;
+      var distParams = new DistanceParameters();
+      var geometryService = new GeometryService("https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer");
       for(var i = 1; i < ewrims.length; i++){
         var diversion = new Point([ewrims[i].FIELD19, ewrims[i].FIELD18]);
-        multipoint.addPoint(diversion);
+        if(trace.contains(diversion)){ //only check distance for points within the extent
+          
+          distParams.distanceUnit = GeometryService.UNIT_STATUTE_METER;
+          distParams.geodesic = false; 
+          distParams.geometry1 = tracePolyline;
+          distParams.geometry2 = diversion;
+          geometryService.distance(distParams,function(distance){
+            if(typeof(distance) == "number"){
+              return sum = sum + distance;
+              
+            }
+          });
+          multipoint.addPoint(diversion);
+        }; 
       };
-      console.log(multipoint);
-      var sms = new SimpleMarkerSymbol().setStyle(
-        SimpleMarkerSymbol.STYLE_SQUARE).setColor(
+      console.log(sum);
+      console.log('average: '+ sum/multipoint.points.length);
+
+      var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
+        SimpleMarkerSymbol.STYLE_CROSS).setColor(
         new Color([255,0,0,0.5]));
       var graphic = new Graphic(multipoint, sms);
-      console.log(graphic);
-       //build a feature Layer from ewrims
-      var featureCollection = {
-        layerDefinition: {
-          geometryType: "multipoint",
-          fields: []
-        },
-        featureSet: {
-          features: graphic,
-          geometryType: "multipoint"
-        }
-      };
+      map.graphics.add(graphic);
+      tableDiverters(waterRights);
 
-      var diverters = new FeatureLayer(featureCollection);
-      console.log(diverters);
-
-      //query from diverters feature layer
-      var query = new Query();
-      query.geometry = tracePolyline;
-      query.spatialRelationshiop = Query.SPATIAL_REL_TOUCHES;
-      //diverters.selectFeatures(query, drawDiverters);
-      var path = tracePolyline.paths
-      featureServiceRequest(path); 
+      // if(distance < 10){
+            //   console.log(diversion);
+            //   multipoint.addPoint(diversion); //only add point if distance less than 10 meters to stream
+            //   // var waterRight = {
+            //   //   ObjectID: ewrims[i].FIELD1,
+            //   //   PodID: ewrims[i].FIELD2,
+            //   //   AppID: ewrims[i].FIELD3,
+            //   //   Quarter: ewrims[i].FIELD12
+            //   // };
+            //   // waterRights.push(waterRight);
+            // }
     };
 
-    var drawDiverters = function(response){
-      console.log(response);
+    function getStd(values){
+      var avg = average(values);
+      
+      var squareDiffs = values.map(function(value){
+        var diff = value - avg;
+        var sqrDiff = diff * diff;
+        return sqrDiff;
+      });
+      
+      var avgSquareDiff = average(squareDiffs);
+
+      var stdDev = Math.sqrt(avgSquareDiff);
+      return stdDev;
+    };
+
+    function average(data){
+      var sum = data.reduce(function(sum, value){
+        return sum + value;
+      }, 0);
+
+      var avg = sum / data.length;
+      return avg;
+    };
+
+    var drawDiverters = function(waterRights){
+      console.log(waterRights);
     };
 
     //find the reach code of the flowline that touches the proposed point of diversion
