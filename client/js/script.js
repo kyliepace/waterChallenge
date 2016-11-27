@@ -96,7 +96,7 @@ require([
 	    //when button2 is clicked, get diverter info from swrcb
 	    button2.addEventListener("click", function(){
         this.disabled = "disabled";
-	    	swrcbRequest();
+	    	makeTable();
 	    });
       //when container 3 is clicked, get waterbasin from usgs
       button3.addEventListener("click", function(){
@@ -142,9 +142,11 @@ require([
       //show only the diverters within the traced streams extent
       var trace = trace_api.allTraceExtents;
       var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
-          SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
+          SimpleMarkerSymbol.STYLE_CROSS).setColor(
           new Color([255,0,0,0.5]));
+      var diverterLayer = new GraphicsLayer();
       var info = new InfoTemplate("Water Right POD", "Stream: {$STREAM}");
+      diverterLayer.setInfoTemplate(info);
 
       for(var i = 1; i < ewrims.length; i++){
         var diversion = new Point([ewrims[i].FIELD19, ewrims[i].FIELD18]);
@@ -154,56 +156,23 @@ require([
             FACE: ewrims[i].FIELD46
           };
           var graphic = new Graphic(diversion, sms, attr, info);
-          map.graphics.add(graphic);
+          diverterLayer.add(graphic);
         }; 
       };
+      map.addLayer(diverterLayer);
+      button1.style.display = "none";
+      instructions.innerHTML = "click on a water right diversion to select it";
+      button2.style.display = "block";
+      selectPoints();
     };
-    // var showGraphic = function(geometry){
-    //   var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
-    //       SimpleMarkerSymbol.STYLE_CROSS).setColor(
-    //       new Color([255,0,0,0.5]));
-    //   var graphic = new Graphic(geometry, sms);
-    //   var info = new InfoTemplate("Water Right POD", "Stream: {$STREAM}");
-    //   graphic.setInfoTemplate(info);
-    //   map.graphics.add(graphic);
-    // };
-    // var showLayer = function(features){
-    //   var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
-    //     SimpleMarkerSymbol.STYLE_CROSS).setColor(
-    //     new Color([255,0,0,0.5]));
-    //   var featureCollection = {
-    //     "layerDefinition": null,
-    //     "featureSet": {
-    //       "features": features,
-    //       "geometryType": "esriGeometryPoint"
-    //     }
-    //   };
-    //   featureCollection.layerDefinition = {
-    //     "geometryType": "esriGeometryPoint",
-    //     "objectIdField": "ObjectID",
-    //     "drawingInfo": {
-    //       "renderer": {
-    //         "type": "simple",
-    //         "symbol": sms
-    //       }
-    //     },
-    //     "fields": [{
-    //         "name": "ObjectID",
-    //         "alias": "ObjectID",
-    //         "type": "esriFieldTypeOID"
-    //       }, {
-    //       "name": "Stream",
-    //       "alias": "source",
-    //       "type": "esriFieldTypeString"
-    //     }]
-    //   };
-    //   var newFeatureLayer = new FeatureLayer(featureCollection, {
-    //     id: 'waterRights'
-    //     //infoTemplate: info
-    //   });
-    //   map.addLayers([newFeatureLayer]);
-    // };
-
+    var selectPoints = function(){
+      //do map.graphics(choose which layer?).on('click') to return a graphic
+      //toggle that graphic's marker symbol color
+      // add that graphic (or just its attributes?) to a table
+    };
+    var makeTable = function(){
+      console.log(map.graphics);
+    };
     var featureServiceRequest = function(path){
       request.open("Get", "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+path+"&geometryType=esriGeometryPolyline&inSR=102100&spatialRel=esriSpatialRelTouches&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
       request.onreadystatechange = featureServiceChange;
