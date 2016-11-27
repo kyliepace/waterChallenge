@@ -7,19 +7,21 @@ var app = express();
 app.use(express.static(path.resolve(__dirname, 'client'))); //send static files to client
 app.use(bodyParser.json());
 
-var mysql      = require('mysql');
-var connection = mysql.createConnection({
-  host     : 'us-cdbr-iron-east-04.cleardb.net',
-  user     : 'bb9344d15cc339',
-  password : '0c238b45',
-  database : 'heroku_cb2952336855801'
-});
- 
-connection.connect( function(){
+var mongodb = require('mongodb');
+var uri = 'mongodb://heroku_ssbnr7d5:h1bmascre743f06hge003kefvm@ds059316.mlab.com:59316/heroku_ssbnr7d5';
+var db; 
+
+mongodb.MongoClient.connect(uri, function(err, database) {
   console.log('hey, we connected to the database!');
+  db = database;
+  app.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
+    console.log("server running");
+  });
 });
 
 app.get('/pods', function(req, res){
+  console.log(req);
+
   res.send('responding to request');
   console.log('hey the client made a request');
   //query a list of downstream pods
@@ -28,17 +30,13 @@ app.get('/pods', function(req, res){
 
   // 2. apply and query CA flowpath service for flowpath the contains the selected coordinates,
   // then query a table where the coordinates are +/- on the selected path
-  connection.query('SELECT * FROM eWRIMS', function(err, rows, fields) {
-    if (err) throw err;
-    console.log('querying from database');
-  });
+  // connection.query('SELECT * FROM eWRIMS', function(err, rows, fields) {
+  //   if (err) throw err;
+  //   console.log('querying from database');
+  // });
 }); 
  
-connection.end();
 
 exports.app = app;
 
 /////[][][][][][][][][][][][][][][][][] run server [][][][][][][][][][][][][][][][]
-app.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
-  console.log("server running");
-});
