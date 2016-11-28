@@ -18,6 +18,8 @@ require([
     "esri/InfoTemplate",
     "dijit/TooltipDialog",
     "esri/SpatialReference",
+    "esri/dijit/Popup",
+    "esri/lang",
     "esri/tasks/query",
    	"dojo/dom"
 ], function (
@@ -40,6 +42,8 @@ require([
     InfoTemplate,
     TooltipDialog,
     SpatialReference,
+    dijitPopup,
+    esriLang,
     Query,
    	dom
 ) {
@@ -93,6 +97,7 @@ require([
 	    //when container1 is clicked, compare traceline to ewrims diversion points
 	    button1.addEventListener("click", function(){
 	    	this.disabled = "disabled";
+        buildFlowGeometry();
         queryDiverters();
 	    });
 	    //when button2 is clicked, get diverter info from swrcb
@@ -148,7 +153,7 @@ require([
           SimpleMarkerSymbol.STYLE_CROSS).setColor(
           new Color([255,0,0,0.5]));
       var diverterLayer = new GraphicsLayer();
-      //var info = new InfoTemplate("Water Right POD", "Stream: ${stream}");
+      var info = new InfoTemplate("Water Right POD", "Stream: ${stream}");
       //diverterLayer.setInfoTemplate(info);
 
       for(var i = 1; i < ewrims.length; i++){
@@ -171,12 +176,24 @@ require([
           diverterLayer.add(graphic);
         }; 
       };
-      diverterLayer.enableMouseEvents(); 
       map.addLayer(diverterLayer);
       button1.style.display = "none";
       instructions.innerHTML = "click on a water right diversion to select it";
       button2.style.display = "block";
       selectPoints(diverterLayer);
+    };
+    var buildFlowGeometry = function(){
+      var traceGraphics = map._layers.tracePolyLine.graphics;
+      var tracePaths = []; //flatten the trace_api paths into one array
+      for(var j = 0; j < traceGraphics.length; j++){
+        for(var n = 0; n < traceGraphics[j].geometry.paths[0].length; n++){
+          tracePaths.push(traceGraphics[j].geometry.paths[0][n]); //push each coordinate pair into the array
+        }
+      }
+      //build array into a polyline geometry
+      tracePolyline = new Polyline(tracePaths);
+      tracePolyline.setSpatialReference(new SpatialReference(102100));
+      console.log(tracePolyline);
     };
     var selectPoints = function(layer){
       //make a popup appear upon hover
@@ -185,24 +202,28 @@ require([
         style: "position: absolute; width: 250px; font: normal normal normal 10pt Helvetica;z-index:100"
       });
       dialog.startup();
-      diverterLayer.on('mouse-over', function(evt){
-        var t = "<b>${stream}";
-        var content = esriLang.substitute(evt.graphic.attributes,t);
-        dialog.setContent(content);
-        domStyle.set(dialog.domNode, "opacity", 0.85);
-        dijitPopup.open({
-          popup: dialog,
-          x: evt.pageX,
-          y: evt.pageY
-        });
+      layer.on('mouse-over', function(evt){
+        var g = evt.graphic;
+        map.infoWindow.setContent(g.getContent());
+        map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
+        // var t = "<b>${stream}";
+        // var content = esriLang.substitute(evt.graphic.attributes,t);
+        // dialog.setContent(content);
+        // domStyle.set(dialog.domNode, "opacity", 0.85);
+        // dijitPopup.open({
+        //   popup: dialog,
+        //   x: evt.pageX,
+        //   y: evt.pageY
+        // });
       });
-      diverterLayer.on('mouse-out', function(evt){
-        dijitPopup.close(dialog);
+      layer.on('mouse-out', function(evt){
+        //dijitPopup.close(dialog);
+        map.infoWindow.hide();
       });
       //do layer.on('click') to return a graphic
       //toggle that graphic's marker symbol color
       // add that graphic (or just its attributes?) to a table
-      diverterLayer.on('click', function(evt){
+      layer.on('click', function(evt){
         //push evt.graphic into a new graphic layer
       });
     };
@@ -274,6 +295,7 @@ require([
 var map = null;
 var mp;
 var featureServiceUrl;
+var tracePolyline;
 var instructions = document.getElementById('instructions');
 var button1= document.getElementById("button1");
 var update = document.getElementById("update");
