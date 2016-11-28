@@ -6,8 +6,6 @@ The goal of this app is to assist Permitting & Licensing in generating a Water S
 
 - Traces [downstream flowlines](https://txpub.usgs.gov/DSS/streamer/api/3.14/web/index.html)
 
-- Returns [flowline](http://www.arcgis.com/home/item.html?id=6510f031d0a74f6ab879fe73895164eb#overview) info
-
 - Returns list of senior water rights holders on all downstream flowlines
 
 - User selects most-downstream senior water right holder
@@ -15,9 +13,8 @@ The goal of this app is to assist Permitting & Licensing in generating a Water S
 - Coordinates of most-downstream senior water right holder sent to [USGS streamstats](http://streamstatsags.cr.usgs.gov/streamstatsservices/#/) to return watershed and streamflow information.
 
 To do:
-- upload swrcb data to arcgis online service
-- query water rights touching traced flowline
-- query water rights on all downstream flowlines
-- plot returned water rights
-- draw watershed of downstream-most senior right holder
+- create new graphic layer based on user selection
+- show new graphic layer attributes in table
+- let user delete entries from new graphic layer 
+- calculate watershed area at each diversion in table
 - add calendar input for seasonal withdrawals?
