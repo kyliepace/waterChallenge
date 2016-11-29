@@ -27,12 +27,28 @@ body{
 			box-shadow: 0px 0px 20px;
 		}
 	}
-	div{
+	#update{
 		display: none;
 		height: 100px;
 	}
 }
-
+#table{
+	display: none;
+	height: 45vh;
+	text-align: left;
+	border-bottom: 1px solid black;
+	overflow: scroll;
+	p{
+		margin-bottom: -28px;
+	}
+	.waterRight{
+		box-shadow: 0px 2px 0px -1px black;
+		&:hover{
+			cursor: pointer;
+			box-shadow: 1px 1px 1px 1px black;
+		}
+	}
+}
 .blink {
   animation: blink-animation 1s steps(5, start) infinite;
   -webkit-animation: blink-animation 1s steps(5, start) infinite;

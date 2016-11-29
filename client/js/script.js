@@ -96,9 +96,9 @@ require([
     // 		showCoordinates(evt); //place marker on map
     //     traceDownstream() //find reachcode of intersecting flowline
     // 	}
-        // else if(trace_api.haveTrace()){
-        //   mapClick.remove();
-        // }
+    //     else if(trace_api.haveTrace()){
+    //       mapClick.remove();
+    //     }
     // });
 
     //when container1 is clicked, compare traceline to ewrims diversion points
@@ -109,7 +109,6 @@ require([
     });
     //when button2 is clicked, get diverter info from swrcb
     button2.addEventListener("click", function(){
-      this.disabled = "disabled";
       snapToPolyline();
     	makeTable();
     });
@@ -130,6 +129,7 @@ require([
 
     //when graphic is clicked, toggle that graphic's marker symbol color and add to new graphics layer
     diverterLayer.on('mouse-up', function(evt){
+      button2.style.display = "block";
       if(evt.graphic._graphicsLayer.id !== selectedLayer.id){ //if graphic is not already in layer
         evt.graphic.setSymbol(new SimpleMarkerSymbol().setSize(10).setStyle(SimpleMarkerSymbol.STYLE_CIRCLE).setColor(new Color([122, 66, 123,1]))); //change graphic color
         selectedLayer.add(evt.graphic);
@@ -184,7 +184,7 @@ require([
     var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
         SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
         new Color([255,0,0,0.5]));
-    var info = new InfoTemplate("Water Right POD", "Stream: ${stream}");
+    var info = new InfoTemplate("Water Right POD", "Stream: ${stream} <br>WR Type: ${wrType}<br>Status: ${wrStatus} <br>divType: ${divType}");
     for(var i = 1; i < 200; i ++){
       var record = ewrims[i];
       var diversion = new Point([record.FIELD19, record.FIELD18]);
@@ -215,7 +215,7 @@ require([
         SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
         new Color([255,0,0,0.5]));
     diverterLayer.id = 'diverterLayer';
-    var info = new InfoTemplate("Water Right POD", "Stream: ${stream}");
+    var info = new InfoTemplate("Water Right POD", "Stream: ${stream} <br>WR Type: ${wrType}<br>WR Status: ${wrStatus} <br>divType: ${divType}<br>diversion status: ${podStatus}");
     for(var i = 1; i < ewrims.length; i++){
       var record = ewrims[i];
       var diversion = new Point([record.FIELD19, record.FIELD18]);
@@ -238,8 +238,7 @@ require([
     };
     map.addLayers([diverterLayer, selectedLayer]);
     button1.style.display = "none";
-    instructions.innerHTML = "click on a water right diversion to select it";
-    button2.style.display = "block";
+    instructions.innerHTML = "click on a water right diversion to select it for analysis";
     applyToolTip();
   };
   var buildFlowGeometry = function(){
@@ -249,14 +248,12 @@ require([
       for(var n = 0; n < traceGraphics[j].geometry.paths[0].length; n++){
         tracePaths.push(traceGraphics[j].geometry.paths[0][n]); //push each coordinate pair into the array
       }
-    }
-    //build array into a polyline geometry
+    } //build array into a polyline geometry
     tracePolyline = new Polyline(tracePaths);
     tracePolyline.setSpatialReference(new SpatialReference(102100));
     console.log(tracePolyline);
   };
-  var applyToolTip = function(){
-    //make a popup appear upon hover
+  var applyToolTip = function(){ //make a popup appear upon hover
     dialog = new TooltipDialog({
       id: "tooltipDialog",
       style: "position: absolute; width: 250px; font: normal normal normal 10pt Helvetica;z-index:100"
@@ -264,10 +261,29 @@ require([
     dialog.startup();
   };
   var makeTable = function(){
-    console.log(map.graphics);
+    button2.style.display = "none";
+    var counter = 0;
+    //build table that shows attributes of selectedLayer graphics array
+    selectedLayer.graphics.forEach(function(diversion){
+      var htmlDiv = makeDiv(diversion.attributes, counter);
+      table.insertAdjacentHTML("beforeEnd", htmlDiv);
+      counter ++; //increase the counter value so the next div in the table will have different background
+    });
+    table.style.display = "block";
+    instructions.innerHTML = 'delete unwanted diversions from table';
+    button3.style.display = 'block';
+  };
+  var makeDiv = function(attr, counter){
+    var background;
+    if(counter % 2 === 0){
+      background = "lightgrey";
+    }
+    var htmlDiv = "<div class='waterRight' style='background-color:"+background+"'><p>"+attr.stream+"</p><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span><br><span>type: "+attr.wrType+"</span><br>\
+    <span>status: "+attr.podStatus+"</span>";
+    return htmlDiv;
   };
   var snapToPolyline = function(){
-
+    //make points in selectedLayer snap to tracePolyline
   };
   var featureServiceRequest = function(path){
     request.open("Get", "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+path+"&geometryType=esriGeometryPolyline&inSR=102100&spatialRel=esriSpatialRelTouches&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
@@ -339,3 +355,4 @@ var update = document.getElementById("update");
 var button2 = document.getElementById("button2");
 var request = new XMLHttpRequest();
 var button3 = document.getElementById("button3");
+var table = document.getElementById("table");
