@@ -144,6 +144,7 @@ require([
       }
     });
   };
+
   ////**** FUNCTION LIBRARY *****//////////////
   function showCoordinates(evt) {
     //the map is in web mercator but display coordinates in geographic (lat, long)
@@ -230,7 +231,9 @@ require([
           divType: record.FIELD47,
           wrType: record.FIELD49,
           wrStatus: record.FIELD50,
-          podStatus: record.FIELD45
+          podStatus: record.FIELD45,
+          appId: record.FIELD3,
+          appPod: record.FIELD5
         };
         var graphic = new Graphic(diversion, sms, attr, info);
         diverterLayer.add(graphic);
@@ -272,15 +275,29 @@ require([
     table.style.display = "block";
     instructions.innerHTML = 'delete unwanted diversions from table';
     button3.style.display = 'block';
+    allowDeletion();
   };
   var makeDiv = function(attr, counter){
     var background;
     if(counter % 2 === 0){
       background = "lightgrey";
     }
-    var htmlDiv = "<div class='waterRight' style='background-color:"+background+"'><p>"+attr.stream+"</p><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span><br><span>type: "+attr.wrType+"</span><br>\
-    <span>status: "+attr.podStatus+"</span>";
+    var htmlDiv = "<div id="+attr.appPod+"class='waterRight' style='background-color:"+background+"'><div><p>"+attr.stream+"</p>\
+    <br><span>app: "+attr.appId+"</span><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span>\
+    <br><span>type: "+attr.wrType+"</span><br>\
+    <span>status: "+attr.podStatus+"</span></div><div class='delete'>X</div>";
     return htmlDiv;
+  };
+  var allowDeletion = function(){
+    var deleteDiverters = document.getElementsByClassName("delete");
+    for(var i = 0; i < deleteDiverters.length; i ++){
+      deleteDiverters[i].addEventListener("click", function(evt){
+        console.log('delete graphic from selectedLayer');
+        console.log(evt.target.parentNode.id);
+        //find graphic with attr.appPod equal to the parent node id
+        // remove from selectedLayer
+      });
+    };
   };
   var snapToPolyline = function(){
     //make points in selectedLayer snap to tracePolyline

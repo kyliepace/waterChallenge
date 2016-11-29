@@ -5,12 +5,14 @@ body{
 	display: flex;
 }
 #map{
-	width: 800px;
-	height: 600px;
+	width: 70%;
+	height: 88vh;
 }
 #info {
 	width: 30%;
-	padding: 20px;
+	padding: 20px 20px 0px 20px;
+	max-height: 88vh;
+	overflow: scroll;
 	text-align: center;
 	button{
 		display: none;
@@ -34,18 +36,26 @@ body{
 }
 #table{
 	display: none;
-	height: 45vh;
 	text-align: left;
 	border-bottom: 1px solid black;
-	overflow: scroll;
-	p{
-		margin-bottom: -28px;
-	}
+	margin: auto;
 	.waterRight{
+		display: flex;
+		justify-content: space-between;
+		margin-top: 10px;
 		box-shadow: 0px 2px 0px -1px black;
 		&:hover{
-			cursor: pointer;
-			box-shadow: 1px 1px 1px 1px black;
+			box-shadow: 0px 1px 1px 1px black;
+		}
+		p{
+			margin-bottom: -28px;
+		}
+		.delete{
+			width: 50px;
+			padding: 50px 0px;
+			&:hover{
+				cursor: pointer;
+			}
 		}
 	}
 }
