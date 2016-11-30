@@ -13,8 +13,6 @@ The goal of this app is to assist Permitting & Licensing in generating a Water S
 - Coordinates of most-downstream senior water right holder sent to [USGS streamstats](http://streamstatsags.cr.usgs.gov/streamstatsservices/#/) to return watershed and streamflow information.
 
 To do:
-- create new graphic layer based on user selection
-- show new graphic layer attributes in table
-- let user delete entries from new graphic layer 
-- calculate watershed area at each diversion in table
-- add calendar input for seasonal withdrawals?
+- show available usgs stream gages
+- snap selectedLayer graphics to flowline
+- tally diversions of all water rights holders in each watershed in downstreamRights array

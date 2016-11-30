@@ -115,8 +115,9 @@ require([
     button3.addEventListener("click", function(){
       this.disabled = "disabled";
       snapToPolyline();
-      console.log(selectedLayer.graphics);
       usgsRequest(0, saveWatershed);
+      diverterListener.remove(); // turn off diverterLayer event listeners
+      // turn off ability to delete diversions from table
     });
 
     //add graphic to selectedLayer when diverterLayer graphic is clicked
@@ -130,8 +131,9 @@ require([
     });
 
     //when graphic is clicked, toggle that graphic's marker symbol color and add to new graphics layer
-    diverterLayer.on('mouse-up', function(evt){
+    var diverterListener = diverterLayer.on('mouse-up', function(evt){
       button2.style.display = "block";
+      button3.style.display = "none"; //user must re-build table
       if(evt.graphic._graphicsLayer.id !== selectedLayer.id){ //if graphic is not already in layer
         evt.graphic.setSymbol(new SimpleMarkerSymbol().setSize(10).setStyle(SimpleMarkerSymbol.STYLE_CIRCLE).setColor(new Color([122, 66, 123,1]))); //change graphic color
         selectedLayer.add(evt.graphic);
@@ -374,6 +376,7 @@ require([
         console.log('end');
         document.body.style.cursor = "auto";
         update.style.display = "none";
+        button3.style.display = "none";
       }
     };
     mySyncFunction();
@@ -381,20 +384,24 @@ require([
 
   var saveWatershed = function(response){
     var watershed = response.featurecollection[1];
-    var area = response.featurecollection[1].feature.features[0].properties.Shape_Area;
+    var area = response.featurecollection[1].feature.features[0].properties.DRNAREA;
     var watershedID = response.workspaceID; 
+    drawWatershed(watershed); //draw watershed
     downstreamRights.push({
       watershed: watershed,
       area: area,
       watershedID: watershedID
     });
     console.log(downstreamRights);
+    button4.style.display = "block"; //show button4
     //add area to table
-    var areaSpan = "<br><span>area: "+area+"</span>";
+    var areaSpan = "<br><span>area (sq mi): "+area+"</span>";
     return table.children[downstreamRights.length - 1].children[0].insertAdjacentHTML("beforeEnd", areaSpan);
   };
   // draw watershed on map
-  var drawWatershed = function(){
+  var drawWatershed = function(watershed){
+    map.removeLayer(diverterLayer);
+    map.addLayer(selectedLayer);
 		var watershedLayer = new GeoJsonLayer({
   		data: watershed.feature
 		});
@@ -415,3 +422,4 @@ var update = document.getElementById("update");
 var button2 = document.getElementById("button2");
 var button3 = document.getElementById("button3");
 var table = document.getElementById("table");
+var button4 = document.getElementById("button4");

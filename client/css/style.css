@@ -52,6 +52,9 @@ body {
 #table .waterRight p {
   margin-bottom: -28px;
 }
+#table .waterRight h4 {
+  color: lightgrey;
+}
 #table .waterRight .delete {
   width: 50px;
   padding: 50px 0px;
