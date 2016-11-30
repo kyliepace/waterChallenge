@@ -109,12 +109,13 @@ require([
     });
     //when button2 is clicked, get diverter info from swrcb
     button2.addEventListener("click", function(){
-      snapToPolyline();
     	makeTable();
     });
-    //when container 3 is clicked, get waterbasin from usgs
+    //when container 3 is clicked, get waterbasin from usgs for each point in selectedLayer
     button3.addEventListener("click", function(){
-      showCoordinates(evt, "basin");
+      this.disabled = "disabled";
+      snapToPolyline();
+      usgsRequest();
     });
 
     //add graphic to selectedLayer when diverterLayer graphic is clicked
@@ -185,7 +186,7 @@ require([
     var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
         SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
         new Color([255,0,0,0.5]));
-    var info = new InfoTemplate("Water Right POD", "Stream: ${stream} <br>WR Type: ${wrType}<br>Status: ${wrStatus} <br>divType: ${divType}");
+    var info = new InfoTemplate("Water Right POD", "AppId: ${appId}<br>Stream: ${stream} <br>WR Type: ${wrType}<br>Status: ${wrStatus} <br>divType: ${divType}");
     for(var i = 1; i < 200; i ++){
       var record = ewrims[i];
       var diversion = new Point([record.FIELD19, record.FIELD18]);
@@ -199,7 +200,9 @@ require([
           divType: record.FIELD47,
           wrType: record.FIELD49,
           wrStatus: record.FIELD50,
-          podStatus: record.FIELD45
+          podStatus: record.FIELD45,
+          appId: record.FIELD3,
+          appPod: record.FIELD5
         };
       var graphic = new Graphic(diversion, sms, attr, info);
       diverterLayer.add(graphic);  
@@ -264,6 +267,7 @@ require([
     dialog.startup();
   };
   var makeTable = function(){
+    table.innerHTML = ""; //clear table
     button2.style.display = "none";
     var counter = 0;
     //build table that shows attributes of selectedLayer graphics array
@@ -282,7 +286,7 @@ require([
     if(counter % 2 === 0){
       background = "lightgrey";
     }
-    var htmlDiv = "<div id="+attr.appPod+"class='waterRight' style='background-color:"+background+"'><div><p>"+attr.stream+"</p>\
+    var htmlDiv = "<div id="+attr.appPod+" class='waterRight' style='background-color:"+background+"'><div><p>"+attr.stream+"</p>\
     <br><span>app: "+attr.appId+"</span><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span>\
     <br><span>type: "+attr.wrType+"</span><br>\
     <span>status: "+attr.podStatus+"</span></div><div class='delete'>X</div>";
@@ -294,8 +298,20 @@ require([
       deleteDiverters[i].addEventListener("click", function(evt){
         console.log('delete graphic from selectedLayer');
         console.log(evt.target.parentNode.id);
+        var targetId = evt.target.parentNode.id;
         //find graphic with attr.appPod equal to the parent node id
-        // remove from selectedLayer
+        var j = 0;
+        while (j < selectedLayer.graphics.length){
+          if(selectedLayer.graphics[j].attributes.appPod === targetId){
+            selectedLayer.remove(selectedLayer.graphics[j]);
+            j = selectedLayer.graphics.length + 100; //end loop
+          }
+          else{
+            j ++;
+          }
+        }
+        selectedLayer.redraw(); //redraw the selected layer without the deleted diversion
+        makeTable();
       });
     };
   };
@@ -328,30 +344,53 @@ require([
 
   // request waterbasin data from usgs based on coordinates
   function usgsRequest(){
-    var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+mp.x.toFixed(5)+'&ylocation='+mp.y.toFixed(5)+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
-    request.open("Get", usgsBasinUrl);
+    //map.removeLayer(diverterLayer); //remove the layer of unselected diverters
     request.onreadystatechange = usgsStateChange;
-    request.send(); 
+    for(var i = 0; i < selectedLayer.graphics.length; i ++){
+      console.log(i);
+      var x = selectedLayer.graphics[i].geometry.x;
+      var y = selectedLayer.graphics[i].geometry.y;
+      var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+      request.open("Get", usgsBasinUrl, false);
+      request.send(); 
+    }   
   };
 
-  function usgsStateChange(){
+  var usgsStateChange = function(){
     document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
     update.style.display = "block"; //show the update container
     update.innerHTML = "Retrieving watershed data from USGS";
+    instructions.innerHTML = ""; //clear instructions  
     if(request.readyState === 4) { //if response is ready
-      document.body.style.cursor = "auto";
-      update.style.display = "none";
       if(request.status === 200) { //what to do with successful response
+          document.body.style.cursor = "auto";
+          update.style.display = "none";
           var response = JSON.parse(request.responseText);
-          var watershedID = response.workspaceID;
-          var watershed = response.featurecollection[1];
-          drawWatershed(watershed); ////////// Draw the returned watershed on the map
+          return saveWatershed(response);
       }
       else {
-          instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+          return instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
       } 
     }
   }; 
+
+  var saveWatershed = function(response){
+    var watershed = response.featurecollection[1];
+    var area = response.featurecollection[1].feature.features[0].properties.Shape_Area;
+    var watershedID = response.workspaceID; 
+    downstreamRights.push({
+      watershed: watershed,
+      area: area,
+      watershedID: watershedID
+    });
+    //add area to table
+    console.log(table);
+    if(downstreamRights.length == selectedLayer.graphics.length){
+      
+      console.log('done');
+    }
+    return console.log(downstreamRights);
+  };
   // draw watershed on map
   var drawWatershed = function(){
 		var watershedLayer = new GeoJsonLayer({
@@ -366,10 +405,11 @@ require([
 
 var map = null;
 var mp;
+var request = new XMLHttpRequest();
+var downstreamRights = [];
 var instructions = document.getElementById('instructions');
 var button1= document.getElementById("button1");
 var update = document.getElementById("update");
 var button2 = document.getElementById("button2");
-var request = new XMLHttpRequest();
 var button3 = document.getElementById("button3");
 var table = document.getElementById("table");
