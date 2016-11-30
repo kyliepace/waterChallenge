@@ -121,7 +121,7 @@ require([
     //when button2 is clicked, get diverter info from swrcb
     button2.addEventListener("click", function(){
     	makeTable();
-      button1Listener.remove(); //turn off first event listener
+      //button1Listener.remove(); //turn off first event listener
     });
     //when button3 is clicked, get waterbasin from usgs for each point in selectedLayer
     button3.addEventListener("click", function(){
@@ -339,7 +339,9 @@ require([
       };
     }
     else{
-      deleteDiverters.style.display = "none";
+      // deleteDiverters.forEach(function(diverter){
+      //   diverter.style.display = "none";
+      // });
     } 
   };
   var snapToPolyline = function(){
@@ -371,6 +373,8 @@ require([
 
   // request waterbasin data from usgs based on coordinates
   function usgsRequest(counter, callback){
+    map.removeLayer(diverterLayer);
+    map.addLayer(selectedLayer);
     var request = new XMLHttpRequest();
     request.onreadystatechange = function(){
       if(request.status === 200 && request.readyState === 4){
@@ -424,8 +428,7 @@ require([
   };
   // draw watershed on map
   var drawWatershed = function(watershed){
-    map.removeLayer(diverterLayer);
-    map.addLayer(selectedLayer);
+    
 		var watershedLayer = new GeoJsonLayer({
   		data: watershed,
       style: new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
@@ -443,7 +446,12 @@ require([
     var counter = 0;
     downstreamRights.forEach(function(downstreamRight){
       var sum = 0; //in acre-feet/year
-      var watershedPolygon = downstreamRight.watershed.features[0].geometry;
+      var polygonJson = {
+        rings: downstreamRight.watershed.features[0].geometry.coordinates,
+        spatialReference: {wkid: 4326}
+      };
+      var watershedPolygon = new Polygon(polygonJson);
+      console.log(watershedPolygon);
       for(var i = 0; i < ewrims.length; i++){
         var record = ewrims[i];
         if(record.FIELD49 == "Appropriative" && record.FIELD45 == "Active"){ 
@@ -455,7 +463,7 @@ require([
         }
       }
       //add sum to table
-      table.children[counter].children[0].insertAdjacentHTML("<div><span>Sum of all diversions (a-f/yr): "+sum+"</span></div>");  
+      table.children[counter].children[0].insertAdjacentHTML("beforeEnd", "<div><span>Sum of all diversions (a-f/yr): "+sum+"</span></div>");  
     });
   };
   ////////* GET THIS PARTY STARTED  *///////
