@@ -83,7 +83,6 @@ require([
     	map.showZoomSlider();
     	map.setMapCursor("move");
       instructions.innerHTML = "Zoom in to select the proposed point of diversion";
-      sampleDiverters(); //for testing purposes
     });
     // change cursor depending on zoom level
     var mapZoom = map.on("zoom-end", function(){
@@ -102,15 +101,15 @@ require([
       }
     });
 
-    // var mapClick = map.on("click", function(evt){
-    // 	if(map.getZoom() >= 10 && !trace_api.haveTrace()){ //only do if streamer hasn't finished tracing
-    // 		showCoordinates(evt); //place marker on map
-    //     traceDownstream() //find reachcode of intersecting flowline
-    // 	}
-    //     else if(trace_api.haveTrace()){
-    //       mapClick.remove();
-    //     }
-    // });
+    var mapClick = map.on("click", function(evt){
+    	if(map.getZoom() >= 10 && !trace_api.haveTrace()){ //only do if streamer hasn't finished tracing
+    		showCoordinates(evt); //place marker on map
+        traceDownstream() //find reachcode of intersecting flowline
+    	}
+        else if(trace_api.haveTrace()){
+          mapClick.remove();
+        }
+    });
 
     //when button1 is clicked, compare traceline to ewrims diversion points
     var button1Listener = button1.addEventListener("click", function(){
@@ -200,38 +199,6 @@ require([
       map.setMapCursor("auto");
     });
   };
-
-  /////for testing///////////////////////
-  var sampleDiverters = function(){
-    var sms = new SimpleMarkerSymbol().setSize(10).setStyle(
-        SimpleMarkerSymbol.STYLE_CIRCLE).setColor(
-        new Color([255,0,0,0.5]));
-    var info = new InfoTemplate("Water Right POD", "AppId: ${appId}<br>Stream: ${stream} <br>WR Type: ${wrType}<br>Status: ${wrStatus} <br>divType: ${divType}");
-    for(var i = 1; i < 200; i ++){
-      var record = ewrims[i];
-      var diversion = new Point([record.FIELD19, record.FIELD18]);
-      var attr = {
-          stream: record.FIELD22,
-          face: record.FIELD46,
-          site: record.FIELD32,
-          rightId: record.FIELD40,
-          directDiv: record.FIELD41,
-          divToStorage: record.FIELD42,
-          divType: record.FIELD47,
-          wrType: record.FIELD49,
-          wrStatus: record.FIELD50,
-          podStatus: record.FIELD45,
-          appId: record.FIELD3,
-          appPod: record.FIELD5
-        };
-      var graphic = new Graphic(diversion, sms, attr, info);
-      diverterLayer.add(graphic);  
-    }
-    map.addLayer(diverterLayer);
-  };
-  /////// end for testing //////////////////////
-
-
   var queryDiverters = function(){ // find all water right diversions within flowline extent
     //show only the diverters within the traced streams extent
     var trace = trace_api.allTraceExtents;
@@ -347,29 +314,6 @@ require([
   var snapToPolyline = function(){
     //make points in selectedLayer snap to tracePolyline
   };
-  // var featureServiceRequest = function(path){
-  //   request.open("Get", "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+path+"&geometryType=esriGeometryPolyline&inSR=102100&spatialRel=esriSpatialRelTouches&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-  //   request.onreadystatechange = featureServiceChange;
-  //   request.send();
-  // };
-  // var featureServiceChange = function(){
-  //   document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-  //   update.style.display = "block"; //show the update container
-  //   update.innerHTML = "Requesting data from National Hydrography Dataset";
-  //   if(request.readyState === 4) { //if response is ready
-  //     document.body.style.cursor = "auto";
-  //     update.style.display = "none";
-  //     if(request.status === 200) { //what to do with successful response
-  //         var response = JSON.parse(request.responseText);
-  //         console.log(response);
-  //         //reachCode = response.features[0].properties.ReachCode;
-  //         showFlowLines(response);
-  //     }
-  //     else {
-  //         instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-  //     } 
-  //   }
-  // };
 
   // request waterbasin data from usgs based on coordinates
   function usgsRequest(counter, callback){
