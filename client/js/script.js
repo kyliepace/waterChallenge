@@ -376,10 +376,11 @@ require([
     map.removeLayer(diverterLayer);
     map.addLayer(selectedLayer);
     var request = new XMLHttpRequest();
+    var faceAmount = selectedLayer.graphics[counter].attributes.face; 
     request.onreadystatechange = function(){
       if(request.status === 200 && request.readyState === 4){
         console.log(request);
-        callback(JSON.parse(request.responseText));
+        callback(JSON.parse(request.responseText), faceAmount);
         counter ++;
         mySyncFunction(); //call again to perform another request to usgs server
       }
@@ -408,7 +409,7 @@ require([
     mySyncFunction();
   };
 
-  var saveWatershed = function(response){
+  var saveWatershed = function(response, face){
     var watershed = response.featurecollection[1].feature;
     var area = response.parameters[0].value;
     var parameters = response.parameters;
@@ -417,6 +418,7 @@ require([
     downstreamRights.push({
       watershed: watershed,
       area: area,
+      face: face,
       watershedID: watershedID,
       parameters: parameters
     });
@@ -445,7 +447,7 @@ require([
     //to all points in ewrims.json
     var counter = 0;
     downstreamRights.forEach(function(downstreamRight){
-      var sum = 0; //in acre-feet/year
+      var sum = downstreamRight.face; //in acre-feet/year
       var polygonJson = {
         rings: downstreamRight.watershed.features[0].geometry.coordinates,
         spatialReference: {wkid: 4326}
