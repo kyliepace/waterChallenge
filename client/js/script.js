@@ -115,7 +115,8 @@ require([
     button3.addEventListener("click", function(){
       this.disabled = "disabled";
       snapToPolyline();
-      usgsRequest();
+      console.log(selectedLayer.graphics);
+      usgsRequest(0, saveWatershed);
     });
 
     //add graphic to selectedLayer when diverterLayer graphic is clicked
@@ -318,61 +319,65 @@ require([
   var snapToPolyline = function(){
     //make points in selectedLayer snap to tracePolyline
   };
-  var featureServiceRequest = function(path){
-    request.open("Get", "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+path+"&geometryType=esriGeometryPolyline&inSR=102100&spatialRel=esriSpatialRelTouches&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-    request.onreadystatechange = featureServiceChange;
-    request.send();
-  };
-  var featureServiceChange = function(){
-    document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-    update.style.display = "block"; //show the update container
-    update.innerHTML = "Requesting data from National Hydrography Dataset";
-    if(request.readyState === 4) { //if response is ready
-      document.body.style.cursor = "auto";
-      update.style.display = "none";
-      if(request.status === 200) { //what to do with successful response
-          var response = JSON.parse(request.responseText);
-          console.log(response);
-          //reachCode = response.features[0].properties.ReachCode;
-          showFlowLines(response);
-      }
-      else {
-          instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-      } 
-    }
-  };
+  // var featureServiceRequest = function(path){
+  //   request.open("Get", "http://services.arcgis.com/jDGuO8tYggdCCnUJ/arcgis/rest/services/CAHydrographyFlowlines/FeatureServer/0/query?where=&objectIds=&time=&geometry="+path+"&geometryType=esriGeometryPolyline&inSR=102100&spatialRel=esriSpatialRelTouches&resultType=none&distance=5&units=esriSRUnit_Meter&outFields=&returnGeometry=true&multipatchOption=&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
+  //   request.onreadystatechange = featureServiceChange;
+  //   request.send();
+  // };
+  // var featureServiceChange = function(){
+  //   document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+  //   update.style.display = "block"; //show the update container
+  //   update.innerHTML = "Requesting data from National Hydrography Dataset";
+  //   if(request.readyState === 4) { //if response is ready
+  //     document.body.style.cursor = "auto";
+  //     update.style.display = "none";
+  //     if(request.status === 200) { //what to do with successful response
+  //         var response = JSON.parse(request.responseText);
+  //         console.log(response);
+  //         //reachCode = response.features[0].properties.ReachCode;
+  //         showFlowLines(response);
+  //     }
+  //     else {
+  //         instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
+  //     } 
+  //   }
+  // };
 
   // request waterbasin data from usgs based on coordinates
-  function usgsRequest(){
-    //map.removeLayer(diverterLayer); //remove the layer of unselected diverters
-    request.onreadystatechange = usgsStateChange;
-    for(var i = 0; i < selectedLayer.graphics.length; i ++){
-      console.log(i);
-      var x = selectedLayer.graphics[i].geometry.x;
-      var y = selectedLayer.graphics[i].geometry.y;
-      var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
-      request.open("Get", usgsBasinUrl, false);
-      request.send(); 
-    }   
-  };
-
-  var usgsStateChange = function(){
-    document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+  function usgsRequest(counter, callback){
     update.style.display = "block"; //show the update container
     update.innerHTML = "Retrieving watershed data from USGS";
     instructions.innerHTML = ""; //clear instructions  
-    if(request.readyState === 4) { //if response is ready
-      if(request.status === 200) { //what to do with successful response
-          document.body.style.cursor = "auto";
-          update.style.display = "none";
-          var response = JSON.parse(request.responseText);
-          return saveWatershed(response);
+    document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
+    console.log(counter);
+    var request = new XMLHttpRequest();
+
+    request.onreadystatechange = function(){
+      if(request.status === 200 && request.readyState === 4){
+        console.log(request);
+        callback(JSON.parse(request.responseText));
+        counter ++;
+        mySyncFunction(); //call again to perform another request to usgs server
       }
-      else {
-          return instructions.innerHTML = 'An error occurred during your request: ' +  request.status + ' ' + request.statusText;
-      } 
-    }
-  }; 
+    };
+
+    var mySyncFunction = function(){
+      console.log('counter: '+ counter);
+      if(counter < selectedLayer.graphics.length){ //only do if there's still another graphic
+        var x = selectedLayer.graphics[counter].geometry.x;
+        var y = selectedLayer.graphics[counter].geometry.y;
+        var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+        request.open("Get", usgsBasinUrl, true);
+        request.send();
+      }
+      else{
+        console.log('end');
+        document.body.style.cursor = "auto";
+        update.style.display = "none";
+      }
+    };
+    mySyncFunction();
+  };
 
   var saveWatershed = function(response){
     var watershed = response.featurecollection[1];
@@ -383,13 +388,10 @@ require([
       area: area,
       watershedID: watershedID
     });
+    console.log(downstreamRights);
     //add area to table
-    console.log(table);
-    if(downstreamRights.length == selectedLayer.graphics.length){
-      
-      console.log('done');
-    }
-    return console.log(downstreamRights);
+    var areaSpan = "<br><span>area: "+area+"</span>";
+    return table.children[downstreamRights.length - 1].children[0].insertAdjacentHTML("beforeEnd", areaSpan);
   };
   // draw watershed on map
   var drawWatershed = function(){
@@ -405,7 +407,7 @@ require([
 
 var map = null;
 var mp;
-var request = new XMLHttpRequest();
+
 var downstreamRights = [];
 var instructions = document.getElementById('instructions');
 var button1= document.getElementById("button1");
