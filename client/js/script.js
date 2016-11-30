@@ -49,6 +49,17 @@ require([
   var diverterLayer = new GraphicsLayer();
   var selectedLayer = new GraphicsLayer();
   selectedLayer.id = 'selectedLayer';
+  var map = null;
+  var mp;
+  var downstreamRights = [];
+  var instructions = document.getElementById('instructions');
+  var table = document.getElementById("table");
+  var update = document.getElementById("update");
+  var button1= document.getElementById("button1");
+  var button2 = document.getElementById("button2");
+  var button3 = document.getElementById("button3");
+  var button4 = document.getElementById("button4");
+
   function initialize (){
     parser.parse();
   	map = new Map("map", {
@@ -101,8 +112,8 @@ require([
     //     }
     // });
 
-    //when container1 is clicked, compare traceline to ewrims diversion points
-    button1.addEventListener("click", function(){
+    //when button1 is clicked, compare traceline to ewrims diversion points
+    var button1Listener = button1.addEventListener("click", function(){
     	this.disabled = "disabled";
       buildFlowGeometry();
       queryDiverters();
@@ -110,14 +121,20 @@ require([
     //when button2 is clicked, get diverter info from swrcb
     button2.addEventListener("click", function(){
     	makeTable();
+      button1Listener.remove(); //turn off first event listener
     });
-    //when container 3 is clicked, get waterbasin from usgs for each point in selectedLayer
+    //when button3 is clicked, get waterbasin from usgs for each point in selectedLayer
     button3.addEventListener("click", function(){
       this.disabled = "disabled";
-      snapToPolyline();
-      usgsRequest(0, saveWatershed);
+      snapToPolyline(); //this function hasn't been built yet
+      usgsRequest(0, saveWatershed); //request watershed info for each point
       diverterListener.remove(); // turn off diverterLayer event listeners
-      // turn off ability to delete diversions from table
+      allowDeletion(false); // turn off ability to delete diversions from table
+    });
+    //when button4 is clicked, sum the diversion amounts from all diverters within each watershed
+    button4.addEventListener("click", function(){
+      this.disabled = "disabled";
+      queryWatershedDiversions();
     });
 
     //add graphic to selectedLayer when diverterLayer graphic is clicked
@@ -225,27 +242,29 @@ require([
     var info = new InfoTemplate("Water Right POD", "Stream: ${stream} <br>WR Type: ${wrType}<br>WR Status: ${wrStatus} <br>divType: ${divType}<br>diversion status: ${podStatus}");
     for(var i = 1; i < ewrims.length; i++){
       var record = ewrims[i];
-      var diversion = new Point([record.FIELD19, record.FIELD18]);
-      if(trace.contains(diversion)){ //only check distance for points within the extent
-        var attr = {
-          stream: record.FIELD22,
-          face: record.FIELD46,
-          site: record.FIELD32,
-          rightId: record.FIELD40,
-          directDiv: record.FIELD41,
-          divToStorage: record.FIELD42,
-          divType: record.FIELD47,
-          wrType: record.FIELD49,
-          wrStatus: record.FIELD50,
-          podStatus: record.FIELD45,
-          appId: record.FIELD3,
-          appPod: record.FIELD5
+      if(record.FIELD49 == "Appropriative" && record.FIELD45 == "Active"){ //limit results to active, appropriative water rights only 
+        var diversion = new Point([record.FIELD19, record.FIELD18]);
+        if(trace.contains(diversion)){ //only check distance for points within the extent
+          var attr = {
+            stream: record.FIELD22,
+            face: record.FIELD46,
+            site: record.FIELD32,
+            rightId: record.FIELD40,
+            directDiv: record.FIELD41,
+            divToStorage: record.FIELD42,
+            divType: record.FIELD47,
+            wrType: record.FIELD49,
+            wrStatus: record.FIELD50,
+            podStatus: record.FIELD45,
+            appId: record.FIELD3,
+            appPod: record.FIELD5
+          };
+          var graphic = new Graphic(diversion, sms, attr, info);
+          diverterLayer.add(graphic); //add each point to diverter layer
         };
-        var graphic = new Graphic(diversion, sms, attr, info);
-        diverterLayer.add(graphic);
-      }; 
+      }
     };
-    map.addLayers([diverterLayer, selectedLayer]);
+    map.addLayers([diverterLayer, selectedLayer]); //add the unpopulated selectedLayer too
     button1.style.display = "none";
     instructions.innerHTML = "click on a water right diversion to select it for analysis";
     applyToolTip();
@@ -282,7 +301,7 @@ require([
     table.style.display = "block";
     instructions.innerHTML = 'delete unwanted diversions from table';
     button3.style.display = 'block';
-    allowDeletion();
+    allowDeletion(true);
   };
   var makeDiv = function(attr, counter){
     var background;
@@ -295,28 +314,33 @@ require([
     <span>status: "+attr.podStatus+"</span></div><div class='delete'>X</div>";
     return htmlDiv;
   };
-  var allowDeletion = function(){
+  var allowDeletion = function(allowBinary){
     var deleteDiverters = document.getElementsByClassName("delete");
-    for(var i = 0; i < deleteDiverters.length; i ++){
-      deleteDiverters[i].addEventListener("click", function(evt){
-        console.log('delete graphic from selectedLayer');
-        console.log(evt.target.parentNode.id);
-        var targetId = evt.target.parentNode.id;
-        //find graphic with attr.appPod equal to the parent node id
-        var j = 0;
-        while (j < selectedLayer.graphics.length){
-          if(selectedLayer.graphics[j].attributes.appPod === targetId){
-            selectedLayer.remove(selectedLayer.graphics[j]);
-            j = selectedLayer.graphics.length + 100; //end loop
+    if(allowBinary){
+      for(var i = 0; i < deleteDiverters.length; i ++){
+        deleteDiverters[i].addEventListener("click", function(evt){
+          console.log('delete graphic from selectedLayer');
+          console.log(evt.target.parentNode.id);
+          var targetId = evt.target.parentNode.id;
+          //find graphic with attr.appPod equal to the parent node id
+          var j = 0;
+          while (j < selectedLayer.graphics.length){
+            if(selectedLayer.graphics[j].attributes.appPod === targetId){
+              selectedLayer.remove(selectedLayer.graphics[j]);
+              j = selectedLayer.graphics.length + 100; //end loop
+            }
+            else{
+              j ++;
+            }
           }
-          else{
-            j ++;
-          }
-        }
-        selectedLayer.redraw(); //redraw the selected layer without the deleted diversion
-        makeTable();
-      });
-    };
+          selectedLayer.redraw(); //redraw the selected layer without the deleted diversion
+          makeTable();
+        });
+      };
+    }
+    else{
+      deleteDiverters.style.display = "none";
+    } 
   };
   var snapToPolyline = function(){
     //make points in selectedLayer snap to tracePolyline
@@ -347,13 +371,7 @@ require([
 
   // request waterbasin data from usgs based on coordinates
   function usgsRequest(counter, callback){
-    update.style.display = "block"; //show the update container
-    update.innerHTML = "Retrieving watershed data from USGS";
-    instructions.innerHTML = ""; //clear instructions  
-    document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
-    console.log(counter);
     var request = new XMLHttpRequest();
-
     request.onreadystatechange = function(){
       if(request.status === 200 && request.readyState === 4){
         console.log(request);
@@ -362,13 +380,16 @@ require([
         mySyncFunction(); //call again to perform another request to usgs server
       }
     };
-
     var mySyncFunction = function(){
+      update.style.display = "block"; //show the update container
+      update.innerHTML = "Retrieving watershed data from USGS";
+      instructions.innerHTML = ""; //clear instructions  
+      document.body.style.cursor = "wait"; //make cursor indicate that data is being loaded
       console.log('counter: '+ counter);
       if(counter < selectedLayer.graphics.length){ //only do if there's still another graphic
         var x = selectedLayer.graphics[counter].geometry.x;
         var y = selectedLayer.graphics[counter].geometry.y;
-        var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true';
+        var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=true&includeflowtypes=false&includefeatures=true&simplify=true';
         request.open("Get", usgsBasinUrl, true);
         request.send();
       }
@@ -377,23 +398,26 @@ require([
         document.body.style.cursor = "auto";
         update.style.display = "none";
         button3.style.display = "none";
+        button4.style.display = "block"; //show button4
       }
     };
     mySyncFunction();
   };
 
   var saveWatershed = function(response){
-    var watershed = response.featurecollection[1];
-    var area = response.featurecollection[1].feature.features[0].properties.DRNAREA;
+    var watershed = response.featurecollection[1].feature;
+    var area = response.parameters[0].value;
+    var parameters = response.parameters;
     var watershedID = response.workspaceID; 
-    drawWatershed(watershed); //draw watershed
+    console.log(watershed);
     downstreamRights.push({
       watershed: watershed,
       area: area,
-      watershedID: watershedID
+      watershedID: watershedID,
+      parameters: parameters
     });
     console.log(downstreamRights);
-    button4.style.display = "block"; //show button4
+    drawWatershed(watershed); //draw watershed
     //add area to table
     var areaSpan = "<br><span>area (sq mi): "+area+"</span>";
     return table.children[downstreamRights.length - 1].children[0].insertAdjacentHTML("beforeEnd", areaSpan);
@@ -403,23 +427,37 @@ require([
     map.removeLayer(diverterLayer);
     map.addLayer(selectedLayer);
 		var watershedLayer = new GeoJsonLayer({
-  		data: watershed.feature
+  		data: watershed,
+      style: new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+        new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASHDOT,
+          new Color([255,0,0]), 2),
+        new Color([255,255,0,0.25]))
 		});
 		map.addLayer(watershedLayer);
 		map.setMapCursor("move");
   };
+
+  var queryWatershedDiversions = function(){
+    //compare the watershed polygon within downstreamRights[i].watershed.features[0].geometry
+    //to all points in ewrims.json
+    var counter = 0;
+    downstreamRights.forEach(function(downstreamRight){
+      var sum = 0; //in acre-feet/year
+      var watershedPolygon = downstreamRight.watershed.features[0].geometry;
+      for(var i = 0; i < ewrims.length; i++){
+        var record = ewrims[i];
+        if(record.FIELD49 == "Appropriative" && record.FIELD45 == "Active"){ 
+          var diversion = new Point([record.FIELD19, record.FIELD18]);
+          if(watershedPolygon.contains(diversion)){
+            var faceAmount = record.FIELD46;
+            sum = sum + faceAmount; 
+          };
+        }
+      }
+      //add sum to table
+      table.children[counter].children[0].insertAdjacentHTML("<div><span>Sum of all diversions (a-f/yr): "+sum+"</span></div>");  
+    });
+  };
   ////////* GET THIS PARTY STARTED  *///////
   ready(initialize); //run function
 });
-
-var map = null;
-var mp;
-
-var downstreamRights = [];
-var instructions = document.getElementById('instructions');
-var button1= document.getElementById("button1");
-var update = document.getElementById("update");
-var button2 = document.getElementById("button2");
-var button3 = document.getElementById("button3");
-var table = document.getElementById("table");
-var button4 = document.getElementById("button4");
