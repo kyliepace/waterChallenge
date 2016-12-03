@@ -1,0 +1,93 @@
+body {
+  font-family: 'Poppins', sans-serif;
+}
+#content {
+  display: flex;
+}
+#map {
+  width: 70%;
+  height: 88vh;
+}
+#info {
+  width: 30%;
+  padding: 20px 20px 0px 20px;
+  max-height: 88vh;
+  overflow: scroll;
+  text-align: center;
+}
+#info button {
+  display: none;
+  margin: 20px auto;
+  min-height: 100px;
+  font-size: 1em;
+  font-family: 'Poppins', sans-serif;
+  background: white;
+  border-radius: 1px;
+  border: 2px solid black;
+  box-shadow: 0px 0px 10px;
+}
+#info button:hover {
+  cursor: pointer;
+  box-shadow: 0px 0px 20px;
+}
+#info #update {
+  display: none;
+  height: 100px;
+}
+#table {
+  display: none;
+  text-align: left;
+  border-bottom: 1px solid black;
+  margin: auto;
+}
+#table .waterRight {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  box-shadow: 0px 2px 0px -1px black;
+}
+#table .waterRight:hover {
+  box-shadow: 0px 1px 1px 1px black;
+}
+#table .waterRight p {
+  margin-bottom: -28px;
+}
+#table .waterRight h4 {
+  color: lightgrey;
+}
+#table .waterRight .delete {
+  width: 50px;
+  padding: 50px 0px;
+}
+#table .waterRight .delete:hover {
+  cursor: pointer;
+}
+.blink {
+  animation: blink-animation 1s steps(5, start) infinite;
+  -webkit-animation: blink-animation 1s steps(5, start) infinite;
+}
+@keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+@-webkit-keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+/*footer*/
+footer {
+  background: #D7D7D7;
+  color: #0D2A40;
+  text-align: center;
+  margin: 0;
+  overflow: auto;
+}
+footer a {
+  text-decoration: none;
+  font-size: 2em;
+  color: #0D2A40;
+  text-align: center;
+  padding: 0.5em;
+}
