@@ -255,8 +255,8 @@ require([
       table.insertAdjacentHTML("beforeEnd", htmlDiv);
       counter ++; //increase the counter value so the next div in the table will have different background
     });
+    instructions.style.display = "none";
     table.style.display = "block";
-    instructions.innerHTML = 'delete unwanted diversions from table';
     button3.style.display = 'block';
     allowDeletion(true);
   };
@@ -267,8 +267,9 @@ require([
     }
     var htmlDiv = "<div id="+attr.appPod+" class='waterRight' style='background-color:"+background+"'><div><p>"+attr.stream+"</p>\
     <br><span>app: "+attr.appId+"</span><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span>\
-    <br><span>face value: "+attr.face+"</span><br>\
-    <span>status: "+attr.podStatus+"</span></div><div class='delete'><i class=\"fa fa-times-circle fa-2x\" aria-hidden=\"true\"></i></div>";
+    <br><span>status: "+attr.podStatus+"</span>\
+    <br><span>face value (a-f/yr): "+attr.face+"</span></div>\
+    <div class='delete'><i class=\"fa fa-times-circle fa-2x\" aria-hidden=\"true\"></i></div>";
     return htmlDiv;
   };
   var allowDeletion = function(){
@@ -303,7 +304,6 @@ require([
     var faceAmount = selectedLayer.graphics[counter].attributes.face; 
     request.onreadystatechange = function(){
       if(request.status === 200 && request.readyState === 4){
-        console.log(request);
         callback(JSON.parse(request.responseText), faceAmount);
         counter ++;
         mySyncFunction(); //call again to perform another request to usgs server
@@ -346,17 +346,24 @@ require([
 //callback each time usgs returns a successful response
   var saveWatershed = function(response, face){
     var watershed = response.featurecollection[1].feature;
+    console.log(watershed);
+    console.log(face);
+
     var area = response.parameters[0].value;
+    console.log("area: "+area);
     var parameters = response.parameters;
     var watershedID = response.workspaceID; 
-    downstreamRights.push({
+    var waterRightObject = {
       watershed: watershed,
+      //geometry: watershed.features[0].geometry,
       area: area,
       face: face,
-      watershedID: watershedID,
-      parameters: parameters, 
-      sum: parseInt(face) //start with the face value
-    });
+      sum: parseInt(face),
+      parameters: parameters,
+      watershedID: watershedID
+    };
+    downstreamRights.push(waterRightObject);
+    console.log(downstreamRights);
   };
   // draw watershed on map once all watersheds have been delineated
   var drawWatershed = function(){
@@ -375,6 +382,8 @@ require([
   var updateTable = function(string, key, arrayName){
     var counter = 0;
     arrayName.forEach(function(i){
+      console.log(i.key);
+      console.log(i);
       var span = "<br><span>"+string+": "+i[key]+"</span>";
       table.children[counter].children[0].insertAdjacentHTML("beforeEnd", span);
       counter ++;
@@ -386,6 +395,7 @@ require([
     //to all points in ewrims.json
     downstreamRights.forEach(function(downstreamRight){
       console.log(downstreamRight.face);
+      console.log(downstreamRight.watershed);
       var polygonJson = {
         rings: downstreamRight.watershed.features[0].geometry.coordinates,
         spatialReference: {wkid: 4326}
@@ -403,8 +413,9 @@ require([
         }
       }
       //add sum to table
-      updateTable("Sum of all diversions (a-f/yr): ", "sum", downstreamRights);
-      //table.children[counter].children[0].insertAdjacentHTML("beforeEnd", "<div><span>Sum of all diversions (a-f/yr): "+sum+"</span></div>");  
+      updateTable("Sum of all diversions (a-f/yr)", "sum", downstreamRights);
+      button4.style.display = "none"; //turn off button
+      document.getElementById("download").style.display = "block";      
     });
   };
   ////////* GET THIS PARTY STARTED  *///////
