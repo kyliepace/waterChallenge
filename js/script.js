@@ -344,7 +344,7 @@ require([
     var watershed = response.featurecollection[1].feature;
     console.log(watershed);
     console.log(face);
-
+    console.log(response);
     var area = response.parameters[0].value;
     console.log("area: "+area);
     var parameters = response.parameters;
@@ -378,7 +378,6 @@ require([
   var updateTable = function(string, key, arrayName){
     var counter = 0;
     arrayName.forEach(function(i){
-      console.log(i.key);
       console.log(i);
       var span = "<br><span>"+string+": "+i[key]+"</span>";
       table.children[counter].children[0].insertAdjacentHTML("beforeEnd", span);
@@ -387,7 +386,6 @@ require([
   };
 
   var sumWatershedDiversions = function(){
-    document.body.style.cursor = "wait";
     //compare the watershed polygon within downstreamRights[i].watershed.features[0].geometry
     //to all points in ewrims.json
     downstreamRights.forEach(function(downstreamRight){
@@ -412,7 +410,6 @@ require([
       //add sum to table
       updateTable("Sum of all diversions (a-f/yr)", "sum", downstreamRights);
       button4.style.display = "none"; //turn off button
-      documet.body.style.cursor = "auto";
       document.getElementById("download").style.display = "block";      
     });
   };
