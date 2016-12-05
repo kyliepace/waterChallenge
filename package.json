@@ -4,11 +4,13 @@
   "description": "water availability analysis web app for the 2016 CA water data challenge",
   "main": "index.html",
   "scripts": {
-    "less": "lessc ./css/style.less ./css/style.css"
+    "less": "lessc ./css/style.less ./css/style.css",
+    "ugly": "uglifyjs ./js/script.js -o ./js/scriptMin.js"
   },
   "author": "Kylie",
   "license": "ISC",
   "devDependencies": {
-    "less": "^2.7.1"
+    "less": "^2.7.1",
+    "uglify-js": "^2.7.5"
   }
 }
