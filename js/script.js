@@ -322,7 +322,7 @@ require([
       if(counter < selectedLength){ //only do if there's still another graphic
         var x = selectedLayer.graphics[counter].geometry.x;
         var y = selectedLayer.graphics[counter].geometry.y;
-        var usgsBasinUrl = 'http://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=true&includeflowtypes=false&includefeatures=true&simplify=true';
+        var usgsBasinUrl = 'https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation='+x+'&ylocation='+y+'&crs=4326&includeparameters=true&includeflowtypes=false&includefeatures=true&simplify=true';
         request.open("Get", usgsBasinUrl, true);
         request.send();
       }
