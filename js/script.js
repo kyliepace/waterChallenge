@@ -298,9 +298,10 @@ require([
     //map.addLayer(selectedLayer);
     var request = new XMLHttpRequest();
     var faceAmount = selectedLayer.graphics[counter].attributes.face; 
+
     request.onreadystatechange = function(){
       if(request.status === 200 && request.readyState === 4){
-        callback(JSON.parse(request.responseText), faceAmount);
+        callback(JSON.parse(request.responseText), faceAmount, counter);
         counter ++;
         mySyncFunction(); //call again to perform another request to usgs server
       }
@@ -334,32 +335,28 @@ require([
         button4.style.display = "block"; //show button4
         map.setExtent(trace_api.allTraceExtents); //make map zoom to show selectedLayer
         drawWatershed(); //draw all returned watersheds
-        updateTable("area (sq mi)",  "area", downstreamRights); 
       }
     };
-    mySyncFunction();
+    mySyncFunction(); //call initial request
   };
 //callback each time usgs returns a successful response
-  var saveWatershed = function(response, face){
+  var saveWatershed = function(response, face, counter){
     var watershed = response.featurecollection[1].feature;
-    console.log(watershed);
-    console.log(face);
     console.log(response);
     var area = response.parameters[0].value;
     console.log("area: "+area);
-    var parameters = response.parameters;
-    var watershedID = response.workspaceID; 
     var waterRightObject = {
       watershed: watershed,
-      //geometry: watershed.features[0].geometry,
       area: area,
       face: face,
       sum: 0,
-      parameters: parameters,
-      watershedID: watershedID
+      parameters: response.parameters,
+      precip: response.parameters[15].value + " "+ response.parameters[15].unit,
+      watershedID: response.workspaceID
     };
     downstreamRights.push(waterRightObject);
-    console.log(downstreamRights);
+    updateTable("watershed area", "area", waterRightObject, counter);
+    updateTable("mean annual precip", "precip", waterRightObject, counter); 
   };
   // draw watershed on map once all watersheds have been delineated
   var drawWatershed = function(){
@@ -375,19 +372,16 @@ require([
     });
   };
 
-  var updateTable = function(string, key, arrayName){
-    var counter = 0;
-    arrayName.forEach(function(i){
-      console.log(i);
-      var span = "<br><span>"+string+": "+i[key]+"</span>";
-      table.children[counter].children[0].insertAdjacentHTML("beforeEnd", span);
-      counter ++;
-    });   
+  var updateTable = function(string, key, objectName, counter){
+    var span = "<br><span>"+string+": "+objectName[key]+"</span>";
+    console.log("counter: "+ counter);
+    table.children[counter].children[0].insertAdjacentHTML("beforeEnd", span);
   };
 
   var sumWatershedDiversions = function(){
     //compare the watershed polygon within downstreamRights[i].watershed.features[0].geometry
     //to all points in ewrims.json
+    var counter = 0;
     downstreamRights.forEach(function(downstreamRight){
       console.log(downstreamRight.face);
       console.log(downstreamRight.watershed);
@@ -408,7 +402,8 @@ require([
         }
       }
       //add sum to table
-      updateTable("Sum of all diversions (a-f/yr)", "sum", downstreamRights);
+      updateTable("Sum of all diversions (a-f/yr)", "sum", downstreamRight, counter);
+      counter ++;
       button4.style.display = "none"; //turn off button
       document.getElementById("download").style.display = "block";      
     });

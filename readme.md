@@ -1,5 +1,7 @@
 Created for the [California Water Data Challenge](http://waterchallenge.data.ca.gov/).
 
+Team Will Code 4 Froude is Kylie Pace, Matt Bray, and Austin Hall.
+
 The goal of this app is to assist Permitting & Licensing in generating a Water Supply Report for a proposed diversion.
 
 - Uses esri arcGIS javascript 3.18 api to generate coordinates of proposed point of diversion
