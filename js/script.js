@@ -354,7 +354,7 @@ require([
       //geometry: watershed.features[0].geometry,
       area: area,
       face: face,
-      sum: parseInt(face),
+      sum: 0,
       parameters: parameters,
       watershedID: watershedID
     };
