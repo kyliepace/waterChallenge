@@ -264,7 +264,7 @@ require([
     var htmlDiv = "<div id="+attr.appPod+" class='waterRight' style='background-color:"+background+"'><div><p>"+attr.stream+"</p>\
     <br><span>app: "+attr.appId+"</span><br><span>status: "+attr.wrStatus+"</span><br><span>diversion: "+attr.divType+"</span>\
     <br><span>status: "+attr.podStatus+"</span>\
-    <br><span>face value (a-f/yr): "+attr.face+"</span></div>\
+    <br><span>face value (a-f/yr): "+parseInt(attr.face).toFixed(2)+"</span></div>\
     <div class='delete'><i class=\"fa fa-times-circle fa-2x\" aria-hidden=\"true\"></i></div>";
     return htmlDiv;
   };
@@ -368,8 +368,8 @@ require([
         data: downstreamRight.watershed,
         style: new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
           new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASHDOT,
-            new Color([255,0,0]), 2),
-          new Color([255,255,0,0.25]))
+            new Color([66,134,244]), 2),
+          new Color([83,127,198,0.8]))
       });
       map.addLayer(watershedLayer);
     });
@@ -387,6 +387,7 @@ require([
   };
 
   var sumWatershedDiversions = function(){
+    document.body.style.cursor = "wait";
     //compare the watershed polygon within downstreamRights[i].watershed.features[0].geometry
     //to all points in ewrims.json
     downstreamRights.forEach(function(downstreamRight){
@@ -411,6 +412,7 @@ require([
       //add sum to table
       updateTable("Sum of all diversions (a-f/yr)", "sum", downstreamRights);
       button4.style.display = "none"; //turn off button
+      documet.body.style.cursor = "auto";
       document.getElementById("download").style.display = "block";      
     });
   };
