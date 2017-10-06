@@ -1,0 +1,12 @@
+{
+  "elephantSQL": {
+    "host": "\ttantor.db.elephantsql.com",
+    "port": 0,
+    "url": "postgres://batbggma:SyNDgumL1Z0CsOPWxiSQP52B3qGg_-wa@tantor.db.elephantsql.com:5432/batbggma",
+    "database": "batbggma",
+    "password": "SyNDgumL1Z0CsOPWxiSQP52B3qGg_-wa",
+    "name": "elephantSQL",
+    "user": "batbggma",
+    "connector": "postgresql"
+  }
+}
