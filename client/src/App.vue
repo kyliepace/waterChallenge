@@ -1,17 +1,24 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png">
-    <hello></hello>
+    <div class='content'>
+      <Map />
+      <Info />
+    </div>
+    <Footer />
   </div>
 </template>
 
 <script>
-import Hello from './components/Hello'
+import Map from './components/Map';
+import Info from './components/Info';
+import Footer from './components/Footer';
 
 export default {
   name: 'app',
   components: {
-    Hello
+    Map, 
+    Info,
+    Footer
   }
 }
 </script>
