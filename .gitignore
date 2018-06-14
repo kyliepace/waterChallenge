@@ -5,8 +5,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 test/unit/coverage
-server/datasources.json
-common/models
+server/datasources.development.js
+server/datasources.production.js
 
 # Editor directories and files
 .idea
@@ -14,3 +14,4 @@ common/models
 *.ntvs*
 *.njsproj
 *.sln
+.env
