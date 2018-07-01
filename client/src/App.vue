@@ -1,19 +1,18 @@
 <template>
   <div id="app">
-    <EsriMap @pointFound='pointFound'></EsriMap>
-    <Display :counter='counter' @increaseCounter='increaseCounter'></Display>
+    <MapDiv @pointFound='pointFound'></MapDiv>
+    <!--<Display :counter='counter' @increaseCounter='increaseCounter'></Display> -->
   </div>
 </template>
 
 <script>
-import EsriMap from './components/Map.js';
-//import MapDiv from './components/Map.vue'
+import MapDiv from './components/Map.vue'
 import Display from './components/Display.vue'
 
 export default {
   name: 'app',
   components: {
-    EsriMap, Display
+    MapDiv, Display
   },
   data(){
     return {
@@ -52,6 +51,9 @@ export default {
 </script>
 
 <style>
+/* esri styles */
+@import url('https://js.arcgis.com/3.23/esri/css/esri.css');
+
 @import url('https://fonts.googleapis.com/css?family=Poppins');
 
 #app {

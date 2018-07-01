@@ -1,11 +1,15 @@
 // import 'https://js.arcgis.com/3.14/';
 // import trace_api from 'https://txpub.usgs.gov/DSS/Streamer/api/3.14/js/trace_api.min.js';
 // load esri styles for version 4.7 using loadCss
-import esriLoader from 'esri-loader';
+import { loadModules, loadCss } from 'esri-loader';
 import Vue from 'vue';
-esriLoader.loadCss('https://js.arcgis.com/3.14/esri/css/main.css');
+loadCss('https://js.arcgis.com/3.14/esri/css/main.css');
 
-esriLoader.loadModules(['esri/map'])
+const options = {
+  url: 'https://js.arcgis.com/3.14/'
+};
+
+loadModules(['esri/map'], options)
 .then(([Map]) => {
   var map = new Map("map", {
     basemap: "topo",
