@@ -1,18 +1,19 @@
 <template>
   <div id="app">
-    <MapDiv @pointFound='pointFound'></MapDiv>
+    <EsriMap @pointFound='pointFound'></EsriMap>
     <Display :counter='counter' @increaseCounter='increaseCounter'></Display>
   </div>
 </template>
 
 <script>
-import MapDiv from './components/Map.vue'
+import EsriMap from './components/Map.js';
+//import MapDiv from './components/Map.vue'
 import Display from './components/Display.vue'
 
 export default {
   name: 'app',
   components: {
-    MapDiv, Display
+    EsriMap, Display
   },
   data(){
     return {
@@ -62,12 +63,19 @@ export default {
   display: flex;
   width: 100vw;
   height: 100vh;
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
 }
 
-body{
-  margin: 0;
-  padding: 0;
+html, body, #map {
+    height: 100%;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
 }
+
 * {
   box-sizing: border-box;
 }

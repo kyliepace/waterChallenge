@@ -1,8 +1,9 @@
 <template>
-	<div id='mapid'></div>
+	<div id='map'></div>
 </template>
 
 <script>
+
 import L from 'leaflet'
 //import '../../node_modules/leaflet/dist/leaflet.css'
 
