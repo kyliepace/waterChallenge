@@ -1,11 +1,10 @@
 <template>
-	<div id='map'></div>
+	<div id='map' ref='map' v-on:click='traceStream' ></div>
 </template>
 
 <script>
 
-import L from 'leaflet'
-//import '../../node_modules/leaflet/dist/leaflet.css'
+import { loadModules } from 'esri-loader';
 
 export default{
 	name: 'MapDiv',
@@ -19,22 +18,69 @@ export default{
 	},
 
 	mounted(){
-		this.establishMap();
-
-		// add listener so when point clicked, send point to usgs
-		this.map.on('click', e => {
-			this.$emit('pointFound', e.latlng);
-		});
+		loadModules([
+			'esri/map', 
+			'esri/geometry/webMercatorUtils'
+		])
+      .then(([Map, webMercatorUtils]) => {
+        // create map with the given options
+        this.map = new Map(this.$refs.map, {
+          basemap: 'topo',
+					center: [-119.4179,36.7783],
+					zoom: 7,
+					smartNavigation: false,
+					spatialReference:  4326
+				});
+				this.map.on('load', () => {
+					this.map.hidePanArrows();
+					this.map.showZoomSlider();
+					this.map.setMapCursor('move');
+				});
+				let mapZoom = this.map.on('zoom-end', () => {
+					if (!trace_api.haveTrace()) {
+						let zoomLevel = this.map.getZoom();
+						if (zoomLevel >= 10) {
+							this.map.setMapCursor('crosshair');
+						}
+						else {
+							this.map.setMapCursor('move');
+						}
+					}
+					else {
+						mapZoom.remove();
+					}
+				});
+				
+				this.webMercatorUtils = webMercatorUtils;
+    
+      })
+      .catch(err => {
+        // handle any script or module loading errors
+        console.error(err);
+      });
 	},
 
 	methods: {
-		establishMap(){
-			this.map = L.map('mapid').setView(this.center, this.zoom);
-			L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-				attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-			}).addTo(this.map);
+		traceStream(e) {
+			console.log('trace stream');
+			let mp = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 
-			this.map.cursor
+			if(this.map.getZoom() >= 10 && !trace_api.haveTrace()) {
+				trace_api.addTrace({
+					"map": this.map,
+					"x": mp.x,
+					"y": mp.y,
+					"traceLineColor": [46, 138, 138, 1],
+					"traceLineStyle": "STYLE_SHORTDASHDOT",
+					"originPoint": "infoHover",
+					"clearOldTraces": true,
+					"originPointTextSymbol": trace_api.lastTraceInfo.originStreamName
+				});
+
+				trace_api.on('trace-success', () => {
+					console.log('trace success');
+				});
+			}			
 		},
 
 		findBasin(point) {
@@ -53,12 +99,9 @@ export default{
 
 
 <style scoped>
-#mapid{
+#map{
 	width: 100%;
 	height: 100%;
 	cursor: crosshair;
-}
-.leaflet-map-pane{
-	width: 100%;
 }
 </style>
