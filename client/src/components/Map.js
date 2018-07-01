@@ -5,7 +5,7 @@ import esriLoader from 'esri-loader';
 import Vue from 'vue';
 esriLoader.loadCss('https://js.arcgis.com/3.14/esri/css/main.css');
 
-let EsriMap = esriLoader.loadModules(['esri/map'])
+esriLoader.loadModules(['esri/map'])
 .then(([Map]) => {
   var map = new Map("map", {
     basemap: "topo",
@@ -15,7 +15,7 @@ let EsriMap = esriLoader.loadModules(['esri/map'])
     spatialReference:  4326
   });
 
-  return Vue.component("esri-map", {
+  let EsriMap = Vue.component("esri-map", {
     props: ["map"],
     template: [
       "<div>",
@@ -30,12 +30,14 @@ let EsriMap = esriLoader.loadModules(['esri/map'])
     }
   });
 
+  module.exports = EsriMap;
+
 })
 .catch(err => {
   console.log(err);
 });
 
-module.exports = EsriMap;
+//module.exports = { EsriMap };
 
 
 // require([
