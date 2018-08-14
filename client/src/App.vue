@@ -1,6 +1,9 @@
 <template>
   <div id="app">
-    <MapDiv @pointFound='pointFound'></MapDiv>
+    <MapDiv
+      @pointFound='pointFound'
+      @zoomed='zoomed'
+    ></MapDiv>
     <Display :counter='counter' @increaseCounter='increaseCounter'></Display>
   </div>
 </template>
@@ -29,13 +32,29 @@ export default {
       this.increaseCounter();
     },
 
+    zoomed(isTrue){
+      if (isTrue) {
+        this.increaseCounter();
+      }
+      else {
+        this.decreaseCounter();
+      }
+    },
+
     increaseCounter(){
       this.counter ++;
       this.checkCounter();
     },
+
+    decreaseCounter() {
+      if (this.counter > 1) {
+        this.counter --;
+      }
+    },
+
     checkCounter(){
       // counter == 2 get all upstream diverters
-      if(this.counter == 2){
+      if(this.counter == 3){
         console.log('get all upstream diverters');
 
         //TODO: query loopback api to find all pods upstream of this.startingPoint
@@ -60,9 +79,10 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+  display: flex;
 }
 
-html, body, #map{
+html, body, #map, #info{
     height: 100vh;
     width: 100%;
     margin: 0px;

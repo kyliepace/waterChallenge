@@ -13,7 +13,6 @@ export default{
 			webMercatorUtis: undefined
 		}
 	},
-
 	mounted(){
 		loadModules([
 			'esri/map',
@@ -35,13 +34,10 @@ export default{
 					this.map.disableDoubleClickZoom();
 				});
 				let mapZoom = this.map.on('zoom-end', (e) => {
-					let zoomLevel = e.level;
-					if (zoomLevel >= 10) {
-						this.map.setMapCursor('crosshair');
-					}
-					else {
-						this.map.setMapCursor('move');
-					}
+					let zoomLevel = e.level >= 10;
+					this.$emit('zoomed', zoomLevel);
+					let cursorType = zoomLevel ? 'crosshair' : 'move';
+					this.map.setMapCursor(cursorType);
 				});
 				this.webMercatorUtils = webMercatorUtils;
       })

@@ -1,21 +1,25 @@
 export default {
 	1: {
-		instructions: 'Zoom in to select the proposed point of diversion',
+		instructions: 'Zoom in to find the proposed point of diversion',
 		text: ''
 	},
 	2: {
+		instructions: 'Double click on the point of diversion',
+		text: ''
+	},
+	3: {
 		text: 'Get senior water rights',
 		instructions: ''
 	},
-	3: {
+	4: {
 		text: 'Let me see it',
 		instructions: 'Produce table from selected diversions'
-	}, 
-	4: {
+	},
+	5: {
 		text: 'Find it!',
 		instructions: 'Query watershed for each diversion'
-	}, 
-	5: {
+	},
+	6: {
 		text: 'Do the math',
 		instructions: 'Sum diversions in each watershed'
 	}

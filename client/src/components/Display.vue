@@ -1,7 +1,12 @@
 <template>
 	<div id='info'>
 		<span>{{instructions}}</span>
-		<button @click='handleClick'>{{button}}</button>
+		<button
+			 v-if='this.counter > 2'
+			 @click='handleClick'
+		>
+			{{button}}
+		</button>
 	</div>
 </template>
 
@@ -13,7 +18,6 @@ export default{
 	props: ['counter'],
 
 	mounted(){
-
 	},
 	computed: {
 		button(){
@@ -35,6 +39,7 @@ export default{
 #info{
 	width: 300px;
 	height: 100%;
+	padding: 20px;
 	/*position: absolute;
 	z-index: 1000;
 	top: 0; */
