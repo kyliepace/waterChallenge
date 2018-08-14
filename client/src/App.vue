@@ -1,16 +1,21 @@
 <template>
   <div id="app">
     <MapDiv
-      @pointFound='pointFound'
-      @zoomed='zoomed'
+      @traceSuccess='traceSuccess'
+      @next='next'
     ></MapDiv>
-    <Display :counter='counter' @increaseCounter='increaseCounter'></Display>
+    <Display
+      :counter='counter'
+      @increaseCounter='increaseCounter'
+      @queryDatabase='queryDatabase'
+    ></Display>
   </div>
 </template>
 
 <script>
 import MapDiv from './components/Map.vue'
 import Display from './components/Display.vue'
+import axios from 'axios';
 
 export default {
   name: 'app',
@@ -19,20 +24,19 @@ export default {
   },
   data(){
     return {
-      counter: 1
+      counter: 1,
+      loading: false,
+      extent: {},
+      point: undefined
     }
   },
   methods: {
-    pointFound(point){
-      //TODO: find point closet to the selected point
-      /* send point to server*/
-      /* create feature collection from sql points*/
-      /* use turf.js to find closed feature collection point to the passed point*/
-      /* save resulting point as this.startingPoint */
-      this.increaseCounter();
+    traceSuccess(extent, point){
+      this.extent = extent;
+      this.point = point;
     },
 
-    zoomed(isTrue){
+    next(isTrue){
       if (isTrue) {
         this.increaseCounter();
       }
@@ -43,7 +47,6 @@ export default {
 
     increaseCounter(){
       this.counter ++;
-      this.checkCounter();
     },
 
     decreaseCounter() {
@@ -52,19 +55,26 @@ export default {
       }
     },
 
-    checkCounter(){
-      // counter == 2 get all upstream diverters
-      if(this.counter == 3){
-        console.log('get all upstream diverters');
+    queryDatabase() {
+      this.loading = true;
+      // send point to server, find points in RDS that are on the stream
+      console.log('query database')
 
-        //TODO: query loopback api to find all pods upstream of this.startingPoint
-      }
-      
+      // on success, add results to map and increase counter
+    },
 
-      // counter == 3 build basin at each diversion
+    findBasin(pnt) {
+      this.loading = true;
+      console.log('find basin for point: ', pnt);
 
-      // counter == 4 find all diversions within each basin and sum all diversions
-    }
+			axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`).then( fc => {
+				console.log(fc);
+        this.loading = false;
+        // create basin from the selected point of diversion
+        // find points in RDS that are within that basin
+
+			});
+    },
   }
 }
 </script>

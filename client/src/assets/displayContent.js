@@ -9,7 +9,8 @@ export default {
 	},
 	3: {
 		text: 'Get senior water rights',
-		instructions: ''
+		instructions: '',
+		function: 'queryDatabase'
 	},
 	4: {
 		text: 'Let me see it',

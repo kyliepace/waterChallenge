@@ -2,7 +2,7 @@
 	<div id='info'>
 		<span>{{instructions}}</span>
 		<button
-			 v-if='this.counter > 2'
+			 v-if='this.content[this.counter].text'
 			 @click='handleClick'
 		>
 			{{button}}
@@ -16,7 +16,11 @@ import content from '../assets/displayContent.js'
 export default{
 	name: 'Display',
 	props: ['counter'],
-
+	data() {
+		return {
+			content: content
+		}
+	},
 	mounted(){
 	},
 	computed: {
@@ -29,7 +33,13 @@ export default{
 	},
 	methods: {
 		handleClick(){
-			this.$emit('increaseCounter');
+			let toDo = content[this.counter].function;
+			if (toDo) {
+				this.$emit(toDo)
+			}
+			else {
+				this.$emit('increaseCounter');
+			}
 		}
 	}
 }

@@ -10,7 +10,8 @@ export default{
 	data(){
 		return {
 			map: undefined,
-			webMercatorUtis: undefined
+			webMercatorUtis: undefined,
+			pod: undefined
 		}
 	},
 	mounted(){
@@ -35,7 +36,7 @@ export default{
 				});
 				let mapZoom = this.map.on('zoom-end', (e) => {
 					let zoomLevel = e.level >= 10;
-					this.$emit('zoomed', zoomLevel);
+					this.$emit('next', zoomLevel);
 					let cursorType = zoomLevel ? 'crosshair' : 'move';
 					this.map.setMapCursor(cursorType);
 				});
@@ -48,33 +49,27 @@ export default{
 
 	methods: {
 		traceStream(e) {
-			let mp = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
+			this.pod = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 
 			if(this.map.getZoom() >= 10) {
 				trace_api.addTrace({
 					"map": this.map,
-					"x": mp.x,
-					"y": mp.y,
+					"x": this.pod.x,
+					"y": this.pod.y,
 					"traceLineColor": [46, 138, 138, 1],
 					"traceLineStyle": "STYLE_SHORTDASHDOT",
 					"originPoint": "infoHover",
 					"clearOldTraces": true,
-					"originPointTextSymbol": trace_api.lastTraceInfo.originStreamName
+					"originPointTextSymbol": trace_api.lastTraceInfo.originStreamName,
+					"zoomToTrace": false
 				});
 
 				trace_api.on('trace-success', () => {
-					console.log('trace success');
+					this.$emit('next', true);
+					this.$emit('traceSuccess', trace_api.allTraceExtents, this.pod);
+					this.map.setMapCursor('move');
 				});
 			}
-		},
-
-		findBasin(point) {
-			this.loading = true;
-
-			axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`).then( fc => {
-				console.log(fc);
-				this.loading = false;
-			});
 		}
 	}
 }
