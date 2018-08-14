@@ -1,25 +1,22 @@
 <template>
-	<div id='map' ref='map' v-on:click='traceStream' ></div>
+	<div id='map' ref='map' v-on:dblclick='traceStream' ></div>
 </template>
 
 <script>
-
 import { loadModules } from 'esri-loader';
 
 export default{
 	name: 'MapDiv',
 	data(){
 		return {
-			map: '',
-			center: [36.7783, -119.4179],
-			zoom: 7,
-			loading: false
+			map: undefined,
+			webMercatorUtis: undefined
 		}
 	},
 
 	mounted(){
 		loadModules([
-			'esri/map', 
+			'esri/map',
 			'esri/geometry/webMercatorUtils'
 		])
       .then(([Map, webMercatorUtils]) => {
@@ -35,9 +32,10 @@ export default{
 					this.map.hidePanArrows();
 					this.map.showZoomSlider();
 					this.map.setMapCursor('move');
+					this.map.disableDoubleClickZoom();
 				});
-				let mapZoom = this.map.on('zoom-end', () => {
-					let zoomLevel = this.map.getZoom();
+				let mapZoom = this.map.on('zoom-end', (e) => {
+					let zoomLevel = e.level;
 					if (zoomLevel >= 10) {
 						this.map.setMapCursor('crosshair');
 					}
@@ -45,19 +43,15 @@ export default{
 						this.map.setMapCursor('move');
 					}
 				});
-				
 				this.webMercatorUtils = webMercatorUtils;
-    
       })
       .catch(err => {
-        // handle any script or module loading errors
         console.error(err);
       });
 	},
 
 	methods: {
 		traceStream(e) {
-			console.log('trace stream');
 			let mp = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 
 			if(this.map.getZoom() >= 10) {
@@ -75,7 +69,7 @@ export default{
 				trace_api.on('trace-success', () => {
 					console.log('trace success');
 				});
-			}			
+			}
 		},
 
 		findBasin(point) {
@@ -84,7 +78,6 @@ export default{
 			axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`).then( fc => {
 				console.log(fc);
 				this.loading = false;
-				
 			});
 		}
 	}
@@ -94,9 +87,8 @@ export default{
 
 
 <style scoped>
+@import url('https://js.arcgis.com/3.14/esri/css/esri.css');
 #map{
-	width: 100%;
-	height: 100%;
-	cursor: crosshair;
+	width: 80vw;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <MapDiv @pointFound='pointFound'></MapDiv>
-    <!--<Display :counter='counter' @increaseCounter='increaseCounter'></Display> -->
+    <Display :counter='counter' @increaseCounter='increaseCounter'></Display>
   </div>
 </template>
 
@@ -52,7 +52,6 @@ export default {
 
 <style>
 /* esri styles */
-@import url('https://js.arcgis.com/3.23/esri/css/esri.css');
 
 @import url('https://fonts.googleapis.com/css?family=Poppins');
 
@@ -60,18 +59,11 @@ export default {
   font-family: 'Poppins', 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  margin: 0px;
-  padding: 0px;
-  overflow: hidden;
 }
 
-html, body, #map {
-    height: 100%;
+html, body, #map{
+    height: 100vh;
     width: 100%;
     margin: 0px;
     padding: 0px;

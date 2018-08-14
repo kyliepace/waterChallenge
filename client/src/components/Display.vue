@@ -13,7 +13,7 @@ export default{
 	props: ['counter'],
 
 	mounted(){
-		
+
 	},
 	computed: {
 		button(){
