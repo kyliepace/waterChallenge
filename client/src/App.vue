@@ -57,10 +57,27 @@ export default {
 
     queryDatabase() {
       this.loading = true;
+      console.log('query database');
       // send point to server, find points in RDS that are on the stream
-      console.log('query database')
+      try {
+        /*
+        axios.get('/find-diverters', {
+          extent: this.extent,
+          point: this.point
+        })
+        .then(res => {
+          // on success, add results to map and increase counter
+          increaseCounter();
+        })
+        .catch(err => {
+          throw err;
+        })
+      */
+      }
+      catch(err) {
 
-      // on success, add results to map and increase counter
+      }
+
     },
 
     findBasin(pnt) {
