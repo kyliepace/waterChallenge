@@ -37,17 +37,12 @@ export default{
 					this.map.setMapCursor('move');
 				});
 				let mapZoom = this.map.on('zoom-end', () => {
-					if (!trace_api.haveTrace()) {
-						let zoomLevel = this.map.getZoom();
-						if (zoomLevel >= 10) {
-							this.map.setMapCursor('crosshair');
-						}
-						else {
-							this.map.setMapCursor('move');
-						}
+					let zoomLevel = this.map.getZoom();
+					if (zoomLevel >= 10) {
+						this.map.setMapCursor('crosshair');
 					}
 					else {
-						mapZoom.remove();
+						this.map.setMapCursor('move');
 					}
 				});
 				
@@ -65,7 +60,7 @@ export default{
 			console.log('trace stream');
 			let mp = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 
-			if(this.map.getZoom() >= 10 && !trace_api.haveTrace()) {
+			if(this.map.getZoom() >= 10) {
 				trace_api.addTrace({
 					"map": this.map,
 					"x": mp.x,
