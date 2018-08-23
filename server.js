@@ -2,14 +2,16 @@
 const express = require("express");
 const dotenv = require('dotenv');
 const bodyParser = require("body-parser");
-//const routes = require('./server/routes');
+const routes = require('./server/routes');
 const expressStaticGzip = require("express-static-gzip");
 
 let server = express();
 dotenv.config();
 server.use(bodyParser.json());
 server.use("/", expressStaticGzip("client/dist"));
-server.use(express.static("client/dist"));
+server.use(express.static("client/dist"))
+
+server.use('/', routes());;
 
 let port = process.env.PORT || '3000';
 server.listen(port, () => {

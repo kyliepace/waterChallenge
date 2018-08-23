@@ -5,6 +5,7 @@
 <script>
 import { loadModules } from 'esri-loader';
 
+
 export default{
 	name: 'MapDiv',
 	data(){
@@ -61,12 +62,17 @@ export default{
 					"originPoint": "infoHover",
 					"clearOldTraces": true,
 					"originPointTextSymbol": trace_api.lastTraceInfo.originStreamName,
-					"zoomToTrace": false
+					"zoomToTrace": false,
+					"basemap": false
 				});
 
 				trace_api.on('trace-success', () => {
 					this.$emit('next', true);
-					this.$emit('traceSuccess', trace_api.allTraceExtents, this.pod);
+					this.$emit('traceSuccess', {
+						polyline: trace_api.map.getLayer("tracePolyLine"),
+						origin: trace_api.map.getLayer("traceOriginPoint"),
+						stagedTraces: trace_api.map.getLayer("stagedTraces")
+					}, this.pod);
 					this.map.setMapCursor('move');
 				});
 			}

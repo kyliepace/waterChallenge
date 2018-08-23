@@ -10,7 +10,7 @@ export default {
 	3: {
 		text: 'Get senior water rights',
 		instructions: '',
-		function: 'queryDatabase'
+		function: 'saveStream'
 	},
 	4: {
 		text: 'Let me see it',

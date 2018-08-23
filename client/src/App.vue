@@ -31,9 +31,12 @@ export default {
     }
   },
   methods: {
-    traceSuccess(extent, point){
-      this.extent = extent;
-      this.point = point;
+    traceSuccess(layers){
+      this.stream = layers.polyline.graphis.map(graphic => {
+        return graphic.geometry.paths
+      });
+      this.point = layers.origin;
+      console.log(this.stream)
     },
 
     next(isTrue){
@@ -55,15 +58,34 @@ export default {
       }
     },
 
+    saveStream() {
+      this.loading = true;
+      let stream = this.stream;
+      try {
+        axios.post('/save-stream', {
+          geometry: stream
+        })
+        .then(() => {
+          this.queryDatabase();
+        })
+        .catch(err => {
+          console.log(err);
+        });
+      }
+      catch(err){
+        console.log(err);
+      }
+    },
+
     queryDatabase() {
       this.loading = true;
       console.log('query database');
+      let point = this.point;
       // send point to server, find points in RDS that are on the stream
       try {
         /*
         axios.get('/find-diverters', {
-          extent: this.extent,
-          point: this.point
+          geometry: this.point
         })
         .then(res => {
           // on success, add results to map and increase counter
