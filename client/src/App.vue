@@ -1,12 +1,15 @@
 <template>
   <div id="app">
     <MapDiv
+      :basin='basin'
+      :downstreamRights='downstreamRights'
       @traceSuccess='traceSuccess'
       @next='next'
     ></MapDiv>
     <Display
       :counter='counter'
       @increaseCounter='increaseCounter'
+      @saveStream='saveStream'
       @queryDatabase='queryDatabase'
     ></Display>
   </div>
@@ -27,16 +30,17 @@ export default {
       counter: 1,
       loading: false,
       extent: {},
-      point: undefined
+      point: undefined,
+      downstreamRights: [],
+      basin: []
     }
   },
   methods: {
     traceSuccess(layers){
-      this.stream = layers.polyline.graphis.map(graphic => {
-        return graphic.geometry.paths
-      });
+      this.stream = layers.polyline.graphics.map(graphic => {
+        return graphic.geometry.paths[0]
+      })[0];
       this.point = layers.origin;
-      console.log(this.stream)
     },
 
     next(isTrue){
@@ -58,62 +62,109 @@ export default {
       }
     },
 
-    saveStream() {
-      this.loading = true;
-      let stream = this.stream;
-      try {
-        axios.post('/save-stream', {
-          geometry: stream
-        })
-        .then(() => {
-          this.queryDatabase();
-        })
-        .catch(err => {
-          console.log(err);
-        });
-      }
-      catch(err){
-        console.log(err);
-      }
-    },
+    // saveStream(){
+    //   console.log('save stream')
+    //   this.loading = true;
+    //   let stream = this.stream;
 
-    queryDatabase() {
-      this.loading = true;
+    //   try {
+    //     axios.post('/save-stream', {
+    //       geometry: stream
+    //     })
+    //     .then(() => {
+    //       return this.queryDatabaseByStream();
+    //     })
+    //     .catch(err => {
+    //       console.log(err);
+    //     });
+    //   }
+    //   catch(err){
+    //     console.log(err);
+    //   }
+    // },
+
+    queryDatabaseByStream() {
       console.log('query database');
-      let point = this.point;
-      // send point to server, find points in RDS that are on the stream
+      let that = this;
+      this.loading = true;
+      // find points in RDS that are on the stream
       try {
-        /*
-        axios.get('/find-diverters', {
-          geometry: this.point
+        axios.post('/find-diverters', {
+          geometry: that.stream
         })
         .then(res => {
-          // on success, add results to map and increase counter
-          increaseCounter();
+          if (res.length > 0) {
+            that.downstreamRights = res;
+            // on success, define watershed from most downstream point
+            console.log('most downstream pod: ', res[0])
+            return that.findBasin(res);
+          }
+          else {
+            throw new Error('no senior rights found');
+          }
         })
         .catch(err => {
           throw err;
         })
-      */
       }
       catch(err) {
-
+        console.log(err);
       }
-
     },
 
-    findBasin(pnt) {
+    findBasin(pnts) {
+      console.log('find basin for all points and point: ', pnts[0]);
+      this.basin = pnts[0];
+      let that = this;
+
+      try {
+        Promise.all(pnts.map((point, index) => {
+          return axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`)
+          .then(fc => {
+            that.downstreamRights[index] = {
+              basin: fc,
+              point: point
+            };
+          })
+          .catch(err => {
+            throw err;
+          })
+        }))
+        .then(() => {
+          // draw basin and senior rights on map
+          that.loading = false;
+          that.increaseCounter();
+        })
+        .catch(err => {
+          throw err;
+        })
+      }
+      catch(err) {
+        console.log(err);
+      }
+    },
+
+    queryDatabaseByBasin() {
+      let that = this;
       this.loading = true;
-      console.log('find basin for point: ', pnt);
-
-			axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`).then( fc => {
-				console.log(fc);
-        this.loading = false;
-        // create basin from the selected point of diversion
-        // find points in RDS that are within that basin
-
-			});
-    },
+      try {
+        axios.get('/sum-face-values', {
+          basin: that.basin,
+          points: that.downstreamRights
+        })
+        .then(res => {
+          that.loading = false;
+          console.log('upstream diverters at each pod on stream', res);
+          // create table with downstreamRights PODs on stream and the upstream demand at each POD
+        })
+        .catch(err => {
+          throw err;
+        })
+      }
+      catch(err){
+        console.log(err);
+      }
+    }
   }
 }
 </script>

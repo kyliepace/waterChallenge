@@ -35,7 +35,7 @@ export default{
 		handleClick(){
 			let toDo = content[this.counter].function;
 			if (toDo) {
-				this.$emit(toDo)
+				this.$emit(toDo);
 			}
 			else {
 				this.$emit('increaseCounter');
