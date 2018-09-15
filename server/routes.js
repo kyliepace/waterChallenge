@@ -9,7 +9,7 @@ const routes = () => {
   router.post(
     "/find-diverters",
     (req, res) => {
-      findDiverters(req.geometry)
+      findDiverters(req.body.geometry)
       .then((data) => {
         res.status(200).json(data);
       })

@@ -2,6 +2,9 @@
 
 > A Vue.js project
 
+## Database
+database parameters are stored in .env file not tracked in github. a postGIS with mock data will be required to fully use app locally.
+
 ## Build Setup
 
 ``` bash

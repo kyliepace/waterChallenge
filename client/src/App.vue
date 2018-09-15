@@ -9,8 +9,7 @@
     <Display
       :counter='counter'
       @increaseCounter='increaseCounter'
-      @saveStream='saveStream'
-      @queryDatabase='queryDatabase'
+      @queryDatabaseByStream='queryDatabaseByStream'
     ></Display>
   </div>
 </template>

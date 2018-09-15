@@ -49,7 +49,7 @@ module.exports = (basin, points) => {
       // .catch(err => {
       //   console.log(err);
       // });
-    })
+    //})
     .catch(err => {
       client.release();
       console.log(err);
