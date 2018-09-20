@@ -11,18 +11,20 @@ module.exports = (stream) => {
       return `${splitLine[0]} ${splitLine[1]}`;
     });
 
-    let streamLineString = `ST_GeomFromText('MultiLineString(${editedStream}, 4326)')`;
-    console.log(streamLineString);
+    let streamLineString = `ST_GeomFromText('MultiLineString((${editedStream}))', 4326)`;
 
     return client.query(`
-      SELECT "APPL_ID", "APPL_POD", "LATITUDE", "LONGITUDE"
-      FROM "eWRIMS_PODs_160912" AS ewrims
-      WHERE ST_DWithin("APPL_POD", ((${streamLineString})), 100, false)
+      SELECT
+        "APPL_ID"
+        , "APPL_POD" AS pod
+        , "pod_point"
+      FROM "eWRIMS_PODs_160912"
+      WHERE "public".ST_DWithin("pod_point", ((${streamLineString})), 100, false)
       ;
     `)
     .then(res => {
       client.release();
-      return res.rows;
+      return res.fields;
     })
     .catch(err => {
       console.log(err);
