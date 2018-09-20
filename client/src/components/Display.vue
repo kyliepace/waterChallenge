@@ -4,6 +4,7 @@
 		<button
 			 v-if='this.content[this.counter].text'
 			 @click='handleClick'
+			 :disabled='this.loading'
 		>
 			{{button}}
 		</button>
@@ -15,7 +16,7 @@ import content from '../assets/displayContent.js'
 
 export default{
 	name: 'Display',
-	props: ['counter'],
+	props: ['counter', 'loading'],
 	data() {
 		return {
 			content: content

@@ -1,6 +1,6 @@
 'use strict';
 
-const db = require('./db.js');
+const db = require('../db.js');
 
 module.exports = (basin, points) => {
   db.connect()

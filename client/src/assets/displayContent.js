@@ -8,11 +8,16 @@ export default {
 		text: ''
 	},
 	3: {
-		text: 'Get senior water rights',
-		instructions: 'Find all senior water rights in selected point\'s drainage area',
-		function: 'queryDatabaseByStream'
+		text: 'Find watershed',
+		instructions: 'Generate watershed from the most downstream point on stream',
+		function: 'findBasin'
 	},
 	4: {
+		text: 'Get senior water rights',
+		instructions: 'Find all senior water rights in watershed',
+		function: 'queryDatabase'
+	},
+	5: {
 		text: 'Sum all diversions',
 		instructions: 'Sum all existing permitted diversion amounts within the drainage area',
 		function: 'queryDatabaseByBasin'

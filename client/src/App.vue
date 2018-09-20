@@ -8,21 +8,25 @@
     ></MapDiv>
     <Display
       :counter='counter'
+      :loading='loading'
       @increaseCounter='increaseCounter'
-      @queryDatabaseByStream='queryDatabaseByStream'
+      @queryDatabase='queryDatabase'
+      @findBasin='findBasin'
     ></Display>
+    <Loading :loading='loading' />
   </div>
 </template>
 
 <script>
 import MapDiv from './components/Map.vue'
 import Display from './components/Display.vue'
+import Loading from './components/Loading.vue';
 import axios from 'axios';
 
 export default {
   name: 'app',
   components: {
-    MapDiv, Display
+    MapDiv, Display, Loading
   },
   data(){
     return {
@@ -31,6 +35,7 @@ export default {
       extent: {},
       point: undefined,
       downstreamRights: [],
+      downstreamPoint: [],
       basin: []
     }
   },
@@ -40,14 +45,18 @@ export default {
         return graphic.geometry.paths[0]
       })[0];
       this.point = layers.origin;
+      this.downstreamPoint = this.stream[this.stream.length - 1];
+      this.increaseCounter();
     },
 
     next(isTrue){
-      if (isTrue) {
-        this.increaseCounter();
-      }
-      else {
-        this.decreaseCounter();
+      if (this.counter < 2) {
+        if (isTrue) {
+          this.increaseCounter();
+        }
+        else {
+          this.decreaseCounter();
+        }
       }
     },
 
@@ -61,48 +70,31 @@ export default {
       }
     },
 
-    // saveStream(){
-    //   console.log('save stream')
-    //   this.loading = true;
-    //   let stream = this.stream;
-
-    //   try {
-    //     axios.post('/save-stream', {
-    //       geometry: stream
-    //     })
-    //     .then(() => {
-    //       return this.queryDatabaseByStream();
-    //     })
-    //     .catch(err => {
-    //       console.log(err);
-    //     });
-    //   }
-    //   catch(err){
-    //     console.log(err);
-    //   }
-    // },
-
-    queryDatabaseByStream() {
-      console.log('query database');
+    findBasin() {
+      console.log('find basin for downstream point: ', this.downstreamPoint);
       let that = this;
       this.loading = true;
-      // find points in RDS that are on the stream
+      let point = this.downstreamPoint;
       try {
-        axios.post('/find-diverters', {
-          geometry: that.stream
+        axios.post('/find-basin', {
+          point
         })
-        .then(res => {
-          if (res.length > 0) {
-            that.downstreamRights = res;
-            // on success, define watershed from most downstream point
-            console.log('most downstream pod: ', res[0])
-            return that.findBasin(res);
+        .then(fc => {
+          if (fc.data.length > 0) {
+            that.basin = fc.data[1].feature.features.map(feature => {
+              return feature.geometry.coordinates;
+            });
+            console.log(that.basin);
+            that.increaseCounter();
+            that.loading = false;
           }
           else {
-            throw new Error('no senior rights found');
+            throw new Error('no basin found');
           }
         })
         .catch(err => {
+          console.log(err)
+          that.loading = false;
           throw err;
         })
       }
@@ -111,30 +103,31 @@ export default {
       }
     },
 
-    findBasin(pnts) {
-      console.log('find basin for all points and point: ', pnts[0]);
-      this.basin = pnts[0];
+    queryDatabase() {
+      console.log('query database');
       let that = this;
-
+      this.loading = true;
+      // find points in RDS that are within the basin
       try {
-        Promise.all(pnts.map((point, index) => {
-          return axios.get(`https://streamstatsags.cr.usgs.gov/streamstatsservices/watershed.geojson?rcode=CA&xlocation=${point.lat}&ylocation=${point.lng}&crs=4326&includeparameters=false&includeflowtypes=false&includefeatures=true&simplify=true`)
-          .then(fc => {
-            that.downstreamRights[index] = {
-              basin: fc,
-              point: point
-            };
-          })
-          .catch(err => {
-            throw err;
-          })
-        }))
-        .then(() => {
-          // draw basin and senior rights on map
-          that.loading = false;
-          that.increaseCounter();
+        axios.post('/find-diverters', {
+          geometry: that.basin
+        })
+        .then(res => {
+          console.log(res);
+          if (res.data.length > 0) {
+            that.downstreamRights = res.data;
+            that.loading = false;
+            that.increaseCounter();
+            // on success, define watershed from most downstream point
+            //console.log('most downstream pod: ', res.data.[0])
+            //return that.findBasin(res);
+          }
+          else {
+            throw new Error('no senior rights found');
+          }
         })
         .catch(err => {
+          that.loading = false;
           throw err;
         })
       }
@@ -157,6 +150,7 @@ export default {
           // create table with downstreamRights PODs on stream and the upstream demand at each POD
         })
         .catch(err => {
+          that.loading = false;
           throw err;
         })
       }

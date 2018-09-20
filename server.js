@@ -7,7 +7,7 @@ const expressStaticGzip = require("express-static-gzip");
 
 let server = express();
 dotenv.config();
-server.use(bodyParser.json());
+server.use(bodyParser.json({limit: '5mb'}));
 server.use("/", expressStaticGzip("client/dist"));
 server.use(express.static("client/dist"))
 

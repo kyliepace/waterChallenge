@@ -67,7 +67,7 @@ export default{
 				});
 
 				trace_api.on('trace-success', () => {
-					this.$emit('next', true);
+					trace_api.zoomToLastTraceExtent();
 					this.$emit('traceSuccess', {
 						polyline: trace_api.map.getLayer("tracePolyLine"),
 						origin: trace_api.map.getLayer("traceOriginPoint"),
