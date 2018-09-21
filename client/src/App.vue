@@ -41,11 +41,11 @@ export default {
   },
   methods: {
     traceSuccess(layers){
-      this.stream = layers.polyline.graphics.map(graphic => {
-        return graphic.geometry.paths[0]
-      })[0];
+      this.stream = layers.polyline;
+      console.log(this.stream)
       this.point = layers.origin;
-      this.downstreamPoint = this.stream[this.stream.length - 1];
+      let downstreamArray = this.stream[this.stream.length - 1];
+      this.downstreamPoint = this.stream[this.stream.length - 1][0];
       this.increaseCounter();
     },
 
@@ -80,7 +80,7 @@ export default {
           point
         })
         .then(fc => {
-          if (fc.data.length > 0) {
+          if (fc.data.length > 1) {
             that.basin = fc.data[1].feature.features.map(feature => {
               return feature.geometry.coordinates;
             });
@@ -118,9 +118,6 @@ export default {
             that.downstreamRights = res.data;
             that.loading = false;
             that.increaseCounter();
-            // on success, define watershed from most downstream point
-            //console.log('most downstream pod: ', res.data.[0])
-            //return that.findBasin(res);
           }
           else {
             throw new Error('no senior rights found');

@@ -7,14 +7,13 @@ module.exports = (basin) => {
   .then(client => {
 
     let editedBasin = basin[0].map(polygon => {
-      let editedPolygon = polygon.map(point => {
+      return polygon.map(point => {
         let splitPoint = point.slice(',');
         return `${splitPoint[0]} ${splitPoint[1]}`;
       }).join(',');
-      return '(' + editedPolygon + ')';
-    }).join(',');
+    }).join(')),((');
 
-    let streamLineString = `ST_GeomFromText('MultiPolygon(${editedBasin})', 102100)`;
+    let streamLineString = `ST_GeomFromText('MULTIPOLYGON(((${editedBasin})))', 4326)`;
 
     return client.query(`
       SELECT
