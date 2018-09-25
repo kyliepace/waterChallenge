@@ -42,11 +42,13 @@ export default {
   methods: {
     traceSuccess(layers){
       this.stream = layers.polyline;
-      console.log(this.stream)
       this.point = layers.origin;
       let downstreamArray = this.stream[this.stream.length - 1];
       this.downstreamPoint = this.stream[this.stream.length - 1][0];
-      this.increaseCounter();
+
+      // reset any existing data
+      this.basin = [];
+      this.counter = 3;
     },
 
     next(isTrue){
@@ -75,16 +77,15 @@ export default {
       let that = this;
       this.loading = true;
       let point = this.downstreamPoint;
+
       try {
         axios.post('/find-basin', {
           point
         })
-        .then(fc => {
-          if (fc.data.length > 1) {
-            that.basin = fc.data[1].feature.features.map(feature => {
-              return feature.geometry.coordinates;
-            });
-            console.log(that.basin);
+        .then(basin => {
+          if (basin.data.length > 0) {
+            console.log(basin.data)
+            that.basin = basin.data;
             that.increaseCounter();
             that.loading = false;
           }

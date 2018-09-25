@@ -27,7 +27,10 @@ export default{
 			'esri/graphic',
 			'esri/geometry/Polygon',
 			'esri/Color',
-		])
+			'esri/renderers/SimpleRenderer'
+		], {
+			url: "https://js.arcgis.com/3.14/"
+		})
       .then(
 			([
 				Map,
@@ -37,7 +40,8 @@ export default{
 				SimpleLineSymbol,
 				Graphic,
 				Polygon,
-				Color
+				Color,
+				SimpleRenderer
 			]) => {
         // create map with the given options
         this.map = new Map(this.$refs.map, {
@@ -61,6 +65,8 @@ export default{
 				});
 				this.webMercatorUtils = webMercatorUtils;
 
+				///// ------- LAYERS ---------- ////
+				/*** create Basin layer ****/
 				let basinStyle = new SimpleFillSymbol(
 					SimpleFillSymbol.STYLE_SOLID,
           new SimpleLineSymbol(
@@ -76,8 +82,15 @@ export default{
 					'spatialReference': {'wkid': 4326}
 				});
 				let graphic = new Graphic(basinPolygon, basinStyle);
-				this.basinLayer = new GraphicsLayer().add(graphic);
-
+				// let basinGraphic = new Graphic({
+				// 	'geometry': basinPolygon,
+				// 	'style': basinStyle
+				// });
+				this.basinLayer = new GraphicsLayer();
+				// var basinRenderer = new SimpleRenderer(basinStyle);
+        // this.basinLayer.setRenderer(basinRenderer);
+				this.basinLayer.id = 'basinLayer';
+				this.basinLayer.add(graphic);
       })
       .catch(err => {
         console.error(err);
@@ -89,6 +102,7 @@ export default{
 			this.pod = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 			let that = this;
 
+			console.log(this.pod)
 			if(this.map.getZoom() >= 10) {
 				trace_api.addTrace({
 					"map": this.map,
@@ -99,8 +113,7 @@ export default{
 					"originPoint": "infoHover",
 					"clearOldTraces": true,
 					"originPointTextSymbol": trace_api.lastTraceInfo.originStreamName,
-					"zoomToTrace": false,
-					"basemap": false
+					"zoomToTrace": false
 				});
 
 				trace_api.on('trace-success', () => {
@@ -121,8 +134,20 @@ export default{
 
 	watch: {
 		basin() {
+			if (this.basin.length > 0) {
+				let that = this;
 
-			this.map.addLayer(this.basinLayer);
+				console.log(this.basinLayer)
+				this.basinLayer.graphics[0].geometry.rings = this.basin;
+
+				this.basinLayer.redraw();
+				this.basinLayer.graphics[0].draw();
+
+				this.basinLayer.attributionDataUrl = 'https://streamstats.usgs.gov/docs/streamstatsservices/#/';
+				this.map.addLayer(that.basinLayer, 0);
+				trace_api.map.addLayer(that.basinLayer, 0)
+				console.log(this.map)
+			}
 		}
 	}
 }
