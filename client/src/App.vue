@@ -79,6 +79,7 @@ export default {
         })
         .then(res => {
           if (res.status == 200 && res.data.length > 0 ) {
+            console.log('found ' + res.data.length + ' existing rights')
             that.downstreamRights = res.data;
             that.loading = false;
             that.counter = 2;

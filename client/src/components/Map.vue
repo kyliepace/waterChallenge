@@ -1,10 +1,10 @@
 <template>
-	<div id='map' ref='map' v-on:dblclick='traceStream' ></div>
+	<div id='map' ref='map' v-on:dblclick='traceStream'></div>
 </template>
 
 <script>
 import { loadModules } from 'esri-loader';
-import createDownstreamLayer from '../functions/create-downstream-layer.js';
+import createPoint from '../functions/create-point.js';
 
 export default{
 	name: 'MapDiv',
@@ -37,7 +37,6 @@ export default{
 			'esri/geometry/Polygon',
 			'esri/geometry/Point',
 			'esri/Color',
-			//'esri/renderers/SimpleRenderer',
 			'esri/InfoTemplate'
 		], {
 			url: "https://js.arcgis.com/3.14/"
@@ -54,15 +53,14 @@ export default{
 				Polygon,
 				Point,
 				Color,
-				//SimpleRenderer,
 				InfoTemplate
 			]) => {
 				// create map with the given options
-				console.log(createDownstreamLayer)
         this.map = new Map(this.$refs.map, {
           basemap: 'topo',
 					center: [-119.4179,36.7783],
-					zoom: 7,
+					//zoom: 7,
+					zoom: 10,
 					smartNavigation: false,
 					spatialReference:  4326
 				});
@@ -102,15 +100,16 @@ export default{
 				// 	'style': basinStyle
 				// });
 				this.basinLayer = new GraphicsLayer();
-				// var basinRenderer = new SimpleRenderer(basinStyle);
-        // this.basinLayer.setRenderer(basinRenderer);
 				this.basinLayer.id = 'basinLayer';
 				this.basinLayer.add(graphic);
 
 
 				/**** create downstream rights points */
-				this.downstreamLayer = new GraphicsLayer();
-				this.downstreamLayer.id = 'downstreamLayer';
+				this.downstreamLayer = new GraphicsLayer({
+					id: 'downstreamLayer',
+					opacity: 1,
+					visible: true
+				});
 				this.esri = {
 					Point,
 					SimpleMarkerSymbol,
@@ -143,15 +142,15 @@ export default{
 				});
 
 				trace_api.on('trace-success', () => {
-					trace_api.zoomToLastTraceExtent();
+					// trace_api.zoomToLastTraceExtent();
 					this.$emit('traceSuccess', {
 						polyline: trace_api.map.getLayer("tracePolyLine").graphics.map(graphic => {
 							graphic.geometry = that.webMercatorUtils.webMercatorToGeographic(graphic.geometry, true);
 							return graphic.geometry.paths[0]
 						}),
 						origin: trace_api.map.getLayer("traceOriginPoint"),
-						stagedTraces: trace_api.map.getLayer("stagedTraces")
-					}, this.pod);
+						selectedPod: that.pod
+					});
 					this.map.setMapCursor('move');
 				});
 			}
@@ -176,7 +175,18 @@ export default{
 		downstreamRights() {
 			if (this.downstreamRights.length > 0) {
 				let that = this;
-				this.downstreamLayer.graphics = createDownstreamLayer(that.downstreamRights, that.esri);
+				this.downstreamRights.forEach(right => {
+					let graphic = createPoint(right, that.esri);
+					that.downstreamLayer.add(graphic)
+				});
+
+				this.downstreamLayer.on('click', evt => {
+					that.downstreamLayer.graphics.forEach(graphic => {
+						graphic.symbol.color = esri.Color([255, 0, 0, 0.5]);
+					});
+					evt.graphic.symbol.color = new esri.Color([122, 66, 123, 1]);
+					that.downstreamLayer.redraw();
+				});
 				this.map.addLayer(that.downstreamLayer);
 			}
 		}
