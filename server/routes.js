@@ -7,6 +7,21 @@ const findBasin = require('./controllers/find-basin');
 
 const routes = () => {
 
+  router.post(
+    "/find-diverters",
+    (req, res) => {
+      console.log('/find-diverters ', new Date());
+      findDiverters(req.body.geometry)
+      .then((data) => {
+        res.status(200).json(data);
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(err.statusCode || 500).json(err);
+      })
+    }
+  );
+
   router.post('/find-basin', (req, res) => {
     let x = req.body.point[0].toString();
     let y = req.body.point[1].toString();
@@ -40,22 +55,6 @@ const routes = () => {
       res.status(err.statusCode || 500).json(err.body);
     })
   });
-
-  router.post(
-    "/find-diverters",
-    (req, res) => {
-      console.log('/find-diverters ', new Date());
-      findDiverters(req.body.geometry)
-      .then((data) => {
-        console.log('diverters found: ', data);
-        res.status(200).json(data);
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(err.statusCode || 500).json(err);
-      })
-    }
-  );
 
   router.get('/sum-face-values', (req, res) => {
     sumValues(req.basin, req.points)

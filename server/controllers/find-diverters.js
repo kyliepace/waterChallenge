@@ -2,16 +2,19 @@
 
 const db = require('../db.js');
 
-module.exports = (basin) => {
+module.exports = (stream) => {
   return db.connect()
   .then(client => {
-    let editedBasin = basin.map(polygon => {
-      return polygon.map(point => {
+
+    let editedStream = stream.map(line => {
+      let linePoints = line.map(point => {
         return `${point[0]} ${point[1]}`;
       }).join(',');
-    }).join('),(');
 
-    let streamLineString = `ST_GeomFromText('POLYGON((${editedBasin}))', 4326)`;
+      return `(${linePoints})`;
+    }).join(',');
+
+    let streamLineString = `ST_GeomFromText('MULTILINESTRING(${editedStream})', 4326)`;
 
     return client.query(`
       SELECT
@@ -31,6 +34,7 @@ module.exports = (basin) => {
     .catch(err => {
       console.log(err);
       client.release();
+      throw err;
     })
   });
 };

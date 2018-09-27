@@ -10,7 +10,7 @@
       :counter='counter'
       :loading='loading'
       @increaseCounter='increaseCounter'
-      @queryDatabase='queryDatabase'
+      @queryDatabaseByBasin='queryDatabaseByBasin'
       @findBasin='findBasin'
     ></Display>
     <Loading :loading='loading' />
@@ -30,7 +30,7 @@ export default {
   },
   data(){
     return {
-      counter: 1,
+      counter: 0,
       loading: false,
       extent: {},
       point: undefined,
@@ -43,16 +43,13 @@ export default {
     traceSuccess(layers){
       this.stream = layers.polyline;
       this.point = layers.origin;
-      let downstreamArray = this.stream[this.stream.length - 1];
-      this.downstreamPoint = this.stream[this.stream.length - 1][0];
-
       // reset any existing data
       this.basin = [];
-      this.counter = 3;
+      this.queryDatabaseByStream();
     },
 
     next(isTrue){
-      if (this.counter < 2) {
+      if (this.counter < 1) {
         if (isTrue) {
           this.increaseCounter();
         }
@@ -72,8 +69,37 @@ export default {
       }
     },
 
+    queryDatabaseByStream() {
+      let that = this;
+      this.loading = true;
+      // find points in RDS that are within the basin
+      try {
+        axios.post('/find-diverters', {
+          geometry: that.stream
+        })
+        .then(res => {
+          if (res.status == 200 && res.data.length > 0 ) {
+            that.downstreamRights = res.data;
+            that.loading = false;
+            that.counter = 2;
+          }
+          else {
+            throw new Error('no senior rights found');
+          }
+        })
+        .catch(err => {
+          that.loading = false;
+          that.counter = 1;
+          throw err;
+        })
+      }
+      catch(err) {
+        console.log(err);
+      }
+    },
+
     findBasin() {
-      console.log('find basin for downstream point: ', this.downstreamPoint);
+      console.log('find basin for point ');
       let that = this;
       this.loading = true;
       let point = this.downstreamPoint;
@@ -95,36 +121,6 @@ export default {
         })
         .catch(err => {
           console.log(err)
-          that.loading = false;
-          throw err;
-        })
-      }
-      catch(err) {
-        console.log(err);
-      }
-    },
-
-    queryDatabase() {
-      console.log('query database');
-      let that = this;
-      this.loading = true;
-      // find points in RDS that are within the basin
-      try {
-        axios.post('/find-diverters', {
-          geometry: that.basin
-        })
-        .then(res => {
-          console.log(res);
-          if (res.data.length > 0) {
-            that.downstreamRights = res.data;
-            that.loading = false;
-            that.increaseCounter();
-          }
-          else {
-            throw new Error('no senior rights found');
-          }
-        })
-        .catch(err => {
           that.loading = false;
           throw err;
         })

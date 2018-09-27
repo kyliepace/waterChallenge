@@ -4,7 +4,7 @@
 
 <script>
 import { loadModules } from 'esri-loader';
-
+import createDownstreamLayer from '../functions/create-downstream-layer.js';
 
 export default{
 	name: 'MapDiv',
@@ -14,7 +14,15 @@ export default{
 			map: undefined,
 			webMercatorUtis: undefined,
 			pod: undefined,
-			basinLayer: undefined
+			basinLayer: undefined,
+			downstreamLayer: undefined,
+			esri: {
+				Point: undefined,
+				SimpleMarkerSymbol: undefined,
+				Color: undefined,
+				InfoTemplate: undefined,
+				Graphic: undefined
+			}
 		}
 	},
 	mounted(){
@@ -24,10 +32,13 @@ export default{
 			'esri/layers/GraphicsLayer',
 			'esri/symbols/SimpleFillSymbol',
 			'esri/symbols/SimpleLineSymbol',
+			'esri/symbols/SimpleMarkerSymbol',
 			'esri/graphic',
 			'esri/geometry/Polygon',
+			'esri/geometry/Point',
 			'esri/Color',
-			'esri/renderers/SimpleRenderer'
+			//'esri/renderers/SimpleRenderer',
+			'esri/InfoTemplate'
 		], {
 			url: "https://js.arcgis.com/3.14/"
 		})
@@ -38,12 +49,16 @@ export default{
 				GraphicsLayer,
 				SimpleFillSymbol,
 				SimpleLineSymbol,
+				SimpleMarkerSymbol,
 				Graphic,
 				Polygon,
+				Point,
 				Color,
-				SimpleRenderer
+				//SimpleRenderer,
+				InfoTemplate
 			]) => {
-        // create map with the given options
+				// create map with the given options
+				console.log(createDownstreamLayer)
         this.map = new Map(this.$refs.map, {
           basemap: 'topo',
 					center: [-119.4179,36.7783],
@@ -91,6 +106,18 @@ export default{
         // this.basinLayer.setRenderer(basinRenderer);
 				this.basinLayer.id = 'basinLayer';
 				this.basinLayer.add(graphic);
+
+
+				/**** create downstream rights points */
+				this.downstreamLayer = new GraphicsLayer();
+				this.downstreamLayer.id = 'downstreamLayer';
+				this.esri = {
+					Point,
+					SimpleMarkerSymbol,
+					Color,
+					InfoTemplate,
+					Graphic
+				};
       })
       .catch(err => {
         console.error(err);
@@ -102,7 +129,6 @@ export default{
 			this.pod = this.webMercatorUtils.webMercatorToGeographic(e.mapPoint);
 			let that = this;
 
-			console.log(this.pod)
 			if(this.map.getZoom() >= 10) {
 				trace_api.addTrace({
 					"map": this.map,
@@ -136,17 +162,22 @@ export default{
 		basin() {
 			if (this.basin.length > 0) {
 				let that = this;
-
-				console.log(this.basinLayer)
 				this.basinLayer.graphics[0].geometry.rings = this.basin;
 
 				this.basinLayer.redraw();
 				this.basinLayer.graphics[0].draw();
 
 				this.basinLayer.attributionDataUrl = 'https://streamstats.usgs.gov/docs/streamstatsservices/#/';
-				this.map.addLayer(that.basinLayer, 0);
-				trace_api.map.addLayer(that.basinLayer, 0)
-				console.log(this.map)
+				this.map.addLayer(that.basinLayer);
+				trace_api.map.addLayer(that.basinLayer);
+			}
+		},
+
+		downstreamRights() {
+			if (this.downstreamRights.length > 0) {
+				let that = this;
+				this.downstreamLayer.graphics = createDownstreamLayer(that.downstreamRights, that.esri);
+				this.map.addLayer(that.downstreamLayer);
 			}
 		}
 	}
