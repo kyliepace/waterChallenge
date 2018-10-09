@@ -4,7 +4,9 @@
 
 <script>
 import { loadModules } from 'esri-loader';
-import createPoint from '../functions/create-point.js';
+// import createPoint from '../functions/create-point.js';
+import createDownstreamLayer from '../functions/create-downstream-layer.js';
+
 
 export default{
 	name: 'MapDiv',
@@ -15,7 +17,6 @@ export default{
 			webMercatorUtis: undefined,
 			pod: undefined,
 			basinLayer: undefined,
-			downstreamLayer: undefined,
 			esri: {
 				Point: undefined,
 				SimpleMarkerSymbol: undefined,
@@ -59,8 +60,7 @@ export default{
         this.map = new Map(this.$refs.map, {
           basemap: 'topo',
 					center: [-119.4179,36.7783],
-					//zoom: 7,
-					zoom: 10,
+					zoom: 7,
 					smartNavigation: false,
 					spatialReference:  4326
 				});
@@ -104,13 +104,8 @@ export default{
 				this.basinLayer.add(graphic);
 
 
-				/**** create downstream rights points */
-				this.downstreamLayer = new GraphicsLayer({
-					id: 'downstreamLayer',
-					opacity: 1,
-					visible: true
-				});
 				this.esri = {
+					GraphicsLayer,
 					Point,
 					SimpleMarkerSymbol,
 					Color,
@@ -175,19 +170,17 @@ export default{
 		downstreamRights() {
 			if (this.downstreamRights.length > 0) {
 				let that = this;
-				this.downstreamRights.forEach(right => {
-					let graphic = createPoint(right, that.esri);
-					that.downstreamLayer.add(graphic)
-				});
-
-				this.downstreamLayer.on('click', evt => {
-					that.downstreamLayer.graphics.forEach(graphic => {
-						graphic.symbol.color = esri.Color([255, 0, 0, 0.5]);
-					});
-					evt.graphic.symbol.color = new esri.Color([122, 66, 123, 1]);
-					that.downstreamLayer.redraw();
-				});
-				this.map.addLayer(that.downstreamLayer);
+				let layer = createDownstreamLayer(that.downstreamRights,
+					that.esri,
+					selectedPoint => {
+						that.$emit('rightSelected', {
+							x: selectedPoint.x,
+							y: selectedPoint.y
+						})
+					}
+				);
+				this.map.addLayer(layer.downstreamLayer);
+				this.map.addLayer(layer.selectedPointLayer);
 			}
 		}
 	}

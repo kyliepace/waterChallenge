@@ -5,6 +5,7 @@
       :downstreamRights='downstreamRights'
       @traceSuccess='traceSuccess'
       @next='next'
+      @rightSelected='rightSelected'
     ></MapDiv>
     <Display
       :counter='counter'
@@ -97,6 +98,10 @@ export default {
       catch(err) {
         console.log(err);
       }
+    },
+
+    rightSelected(point) {
+      console.log(point)
     },
 
     findBasin() {
