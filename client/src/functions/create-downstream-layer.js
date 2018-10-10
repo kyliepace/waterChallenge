@@ -13,7 +13,7 @@ const createDownstreamLayer = (rights, esri, callback) => {
 
   let downstreamLayer = new esri.GraphicsLayer({
     id: 'downstreamLayer',
-    opacity: 0.5,
+    opacity: 0.7,
     visible: true
   });
 
@@ -38,7 +38,7 @@ const createDownstreamLayer = (rights, esri, callback) => {
     let attr = {
       'appl_id': right.appl_id
     };
-    let graphic = new esri.Graphic(point, sms, attr, info);
+    let graphic = new esri.Graphic(point, sms);
     downstreamLayer.add(graphic);
   });
 

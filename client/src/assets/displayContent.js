@@ -22,8 +22,8 @@ export default [
 		function: 'queryDatabaseByBasin'
 	},
 	{
-		text: 'Sum all diversions',
-		instructions: 'Sum all existing permitted diversion amounts within the drainage area',
-		function: 'queryDatabaseByBasin'
+		text: 'Download table',
+		instructions: 'Download table of all water rights and diversion info within selected basin',
+		function: 'exportTable'
 	}
 ];

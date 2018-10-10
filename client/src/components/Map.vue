@@ -4,9 +4,8 @@
 
 <script>
 import { loadModules } from 'esri-loader';
-// import createPoint from '../functions/create-point.js';
+import createBasinLayer from '../functions/create-basin-layer';
 import createDownstreamLayer from '../functions/create-downstream-layer.js';
-
 
 export default{
 	name: 'MapDiv',
@@ -78,36 +77,13 @@ export default{
 				});
 				this.webMercatorUtils = webMercatorUtils;
 
-				///// ------- LAYERS ---------- ////
-				/*** create Basin layer ****/
-				let basinStyle = new SimpleFillSymbol(
-					SimpleFillSymbol.STYLE_SOLID,
-          new SimpleLineSymbol(
-						SimpleLineSymbol.STYLE_DASHDOT,
-						new Color([66,134,244]),
-						2
-					),
-					new Color([83,127,198,0.8])
-				);
-
-				let basinPolygon = new Polygon({
-					'rings': this.basin,
-					'spatialReference': {'wkid': 4326}
-				});
-				let graphic = new Graphic(basinPolygon, basinStyle);
-				// let basinGraphic = new Graphic({
-				// 	'geometry': basinPolygon,
-				// 	'style': basinStyle
-				// });
-				this.basinLayer = new GraphicsLayer();
-				this.basinLayer.id = 'basinLayer';
-				this.basinLayer.add(graphic);
-
-
 				this.esri = {
 					GraphicsLayer,
 					Point,
+					Polygon,
 					SimpleMarkerSymbol,
+				SimpleFillSymbol,
+					SimpleLineSymbol,
 					Color,
 					InfoTemplate,
 					Graphic
@@ -156,13 +132,8 @@ export default{
 		basin() {
 			if (this.basin.length > 0) {
 				let that = this;
-				this.basinLayer.graphics[0].geometry.rings = this.basin;
-
-				this.basinLayer.redraw();
-				this.basinLayer.graphics[0].draw();
-
-				this.basinLayer.attributionDataUrl = 'https://streamstats.usgs.gov/docs/streamstatsservices/#/';
-				this.map.addLayer(that.basinLayer);
+				let layer = createBasinLayer(that.basin, that.esri);
+				this.map.addLayer(layer);
 				trace_api.map.addLayer(that.basinLayer);
 			}
 		},

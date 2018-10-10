@@ -23,30 +23,19 @@ const routes = () => {
   );
 
   router.post('/find-basin', (req, res) => {
-    let x = req.body.point[0].toString();
-    let y = req.body.point[1].toString();
+    let x = req.body.point.x.toString();
+    let y = req.body.point.y.toString();
 
     console.log('/find-basin at point ' + x + ', ' + y, new Date());
 
-    findBasin({
-      x,
-      y
-    })
+    findBasin(req.body.point)
     .then(usgs => {
       let fc = usgs.data.featurecollection;
       let basin = [];
 
       if (fc.length > 1) {
         basin = fc[1].feature.features[0].geometry.coordinates;
-        // basin = fc[1].feature.features
-        // .map(feature => {
-        //   return feature.geometry.coordinates;
-        // })
-        // .reduce((flat, polygons) => {
-        //   return flat.concat(polygons);
-        // }, []);
       };
-
       console.log('basin generated');
       res.status(200).json(basin);
     })
@@ -56,8 +45,9 @@ const routes = () => {
     })
   });
 
-  router.get('/sum-face-values', (req, res) => {
-    sumValues(req.basin, req.points)
+  router.post('/sum-face-values', (req, res) => {
+    console.log('/sum-face-values ', new Date());
+    sumValues(req.body.basin)
     .then(data => {
       res.status(200).json(data);
     })

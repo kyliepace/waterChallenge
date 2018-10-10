@@ -13,6 +13,7 @@
       @increaseCounter='increaseCounter'
       @queryDatabaseByBasin='queryDatabaseByBasin'
       @findBasin='findBasin'
+      @exportTable='exportTable'
     ></Display>
     <Loading :loading='loading' />
   </div>
@@ -36,8 +37,9 @@ export default {
       extent: {},
       point: undefined,
       downstreamRights: [],
-      downstreamPoint: [],
-      basin: []
+      downstreamPoint: {},
+      basin: [],
+      allRights: []
     }
   },
   methods: {
@@ -101,11 +103,12 @@ export default {
     },
 
     rightSelected(point) {
-      console.log(point)
+      this.downstreamPoint = point;
+      this.increaseCounter();
     },
 
     findBasin() {
-      console.log('find basin for point ');
+      console.log('find basin for point ', this.downstreamPoint);
       let that = this;
       this.loading = true;
       let point = this.downstreamPoint;
@@ -115,8 +118,7 @@ export default {
           point
         })
         .then(basin => {
-          if (basin.data.length > 0) {
-            console.log(basin.data)
+          if (basin.status === 200 && basin.data.length > 0) {
             that.basin = basin.data;
             that.increaseCounter();
             that.loading = false;
@@ -140,14 +142,18 @@ export default {
       let that = this;
       this.loading = true;
       try {
-        axios.get('/sum-face-values', {
+        axios.post('/sum-face-values', {
           basin: that.basin,
           points: that.downstreamRights
         })
         .then(res => {
           that.loading = false;
-          console.log('upstream diverters at each pod on stream', res);
+          console.log('upstream diverters at each pod on stream', res.body);
+          if (res.status === 200){
+            that.allRights = res.body;
+          }
           // create table with downstreamRights PODs on stream and the upstream demand at each POD
+          that.increaseCounter();
         })
         .catch(err => {
           that.loading = false;
