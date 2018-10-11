@@ -35,6 +35,7 @@ module.exports = (basin) => {
     .catch(err => {
       client.release();
       console.log(err);
+      throw err;
     })
   });
 };

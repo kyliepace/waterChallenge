@@ -46,7 +46,7 @@ export default{
 }
 </script>
 
-<style scoped>
+<style>
 #info{
 	width: 300px;
 	height: 100%;

@@ -104,7 +104,7 @@ export default {
 
     rightSelected(point) {
       this.downstreamPoint = point;
-      this.increaseCounter();
+      this.counter = 3;
     },
 
     findBasin() {
@@ -118,10 +118,10 @@ export default {
           point
         })
         .then(basin => {
+          that.loading = false;
           if (basin.status === 200 && basin.data.length > 0) {
             that.basin = basin.data;
             that.increaseCounter();
-            that.loading = false;
           }
           else {
             throw new Error('no basin found');
@@ -148,12 +148,10 @@ export default {
         })
         .then(res => {
           that.loading = false;
-          console.log('upstream diverters at each pod on stream', res.body);
           if (res.status === 200){
-            that.allRights = res.body;
+            that.allRights = res.data;
+            that.increaseCounter();
           }
-          // create table with downstreamRights PODs on stream and the upstream demand at each POD
-          that.increaseCounter();
         })
         .catch(err => {
           that.loading = false;
@@ -163,6 +161,15 @@ export default {
       catch(err){
         console.log(err);
       }
+    },
+
+    exportTable() {
+      this.allRights = 'data:text/csv;charset=utf-8,' + this.allRights;
+      let data = encodeURI(this.allRights);
+      let link = document.createElement('a');
+      link.setAttribute('href', res.data);
+      link.setAttribute('download', 'water-rights.csv');
+      link.click();
     }
   }
 }

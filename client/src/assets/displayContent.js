@@ -13,7 +13,7 @@ export default [
 	},
 	{
 		text: 'Find watershed',
-		instructions: 'Generate watershed from the most downstream point of diversion',
+		instructions: 'Generate watershed from the selected water right point of diversion',
 		function: 'findBasin'
 	},
 	{
