@@ -13,7 +13,7 @@
     "build:dev": "webpack -w --config client/build/webpack.dev.conf.js",
     "build:prod": "webpack -p --config client/build/webpack.prod.conf.js",
     "dev": "concurrently --kill-others \"npm run build:dev\" \"nodemon server\"",
-    "start": "pm run build:prod && npm run server",
+    "start": "npm run build:prod && npm run server",
     "test": "cross-env BABEL_ENV=test karma start client/test/unit/karma.conf.js --single-run",
     "posttest": "npm run lint && nsp check"
   },
